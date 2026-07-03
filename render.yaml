@@ -1,0 +1,26 @@
+# Render.com blueprint (optional).
+# Push this repo to GitHub, then in the Render dashboard:
+#   New → Blueprint → point at your repo. Render will read this file
+#   and create the service and disk automatically.
+
+services:
+  - type: web
+    name: cpl-auction
+    runtime: docker
+    plan: starter        # free tier available; upgrade to 'starter' ($7/mo) for no cold starts
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/auction/state
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        value: file:/data/prod.db
+      - key: ADMIN_PASSWORD
+        generateValue: true   # Render will generate + inject a strong password
+    disk:
+      name: cpl-data
+      mountPath: /data
+      sizeGB: 1

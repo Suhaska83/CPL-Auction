@@ -1,0 +1,39 @@
+# Fly.io config for CPLAuction.
+# 1. Install flyctl:  https://fly.io/docs/hands-on/install-flyctl/
+# 2. flyctl auth signup
+# 3. flyctl launch --no-deploy --name cpl-auction   (edit generated file if you prefer)
+# 4. flyctl volumes create cpl_data --size 1 --region <your region>
+# 5. flyctl secrets set ADMIN_PASSWORD="your-strong-password"
+# 6. flyctl deploy
+
+app = "cpl-auction"
+primary_region = "sin"          # change to your closest region (ord, iad, fra, sin, etc.)
+
+[build]
+
+[env]
+  PORT = "3000"
+  NODE_ENV = "production"
+  DATABASE_URL = "file:/data/prod.db"
+
+[[mounts]]
+  source = "cpl_data"           # persistent volume — survives deploys/restarts
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false    # keep the auction server always warm
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/api/auction/state"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

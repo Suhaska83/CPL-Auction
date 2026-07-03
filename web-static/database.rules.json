@@ -1,0 +1,40 @@
+{
+  "rules": {
+    "//": "Anyone can READ auction data (public spectators).",
+    "//1": "Only signed-in admins listed in /admins can WRITE.",
+    "//2": "Bootstrap: if /admins is empty, ANY signed-in user can create it.",
+    "//3": "Deploy with: firebase deploy --only database (or paste into Firebase console → RTDB → Rules)",
+
+    ".read": true,
+    ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || !root.child('admins').exists())",
+
+    "admins": {
+      "$uid": {
+        ".validate": "newData.isBoolean() || newData.val() == null"
+      }
+    },
+    "tournament": {
+      ".validate": "newData.hasChildren(['name','tagline','squadSize','bidIncrement'])"
+    },
+    "teams": {
+      "$teamId": {
+        ".validate": "newData.hasChildren(['name','owner','shortCode','totalBudget','reserveBalance']) || newData.val() == null"
+      }
+    },
+    "players": {
+      "$playerId": {
+        ".validate": "newData.hasChildren(['number','name','skill','basePrice','status']) || newData.val() == null"
+      }
+    },
+    "state": {
+      ".validate": "newData.hasChildren(['currentBid','isRunning']) || newData.val() == null"
+    },
+    "bids": {
+      "$playerId": {
+        "$bidId": {
+          ".validate": "newData.hasChildren(['teamId','amount','at']) || newData.val() == null"
+        }
+      }
+    }
+  }
+}

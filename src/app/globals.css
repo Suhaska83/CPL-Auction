@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap");
+
+html,
+body {
+  min-height: 100%;
+  background: #050b26;
+  color: #f8fafc;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.stadium-bg {
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(37, 64, 143, 0.55), transparent 60%),
+    radial-gradient(1000px 400px at 50% 110%, rgba(22, 78, 99, 0.35), transparent 60%),
+    linear-gradient(180deg, #050b26 0%, #0a1338 60%, #050b26 100%);
+  min-height: 100vh;
+}
+
+.field-lights {
+  background-image:
+    radial-gradient(circle at 10% 30%, rgba(255, 255, 255, 0.06) 0 2px, transparent 3px),
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.06) 0 2px, transparent 3px),
+    radial-gradient(circle at 60% 25%, rgba(255, 255, 255, 0.06) 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.06) 0 2px, transparent 3px);
+}
+
+.chip {
+  @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold uppercase tracking-wider;
+}
+
+.card {
+  @apply rounded-xl border border-panel-border/60 bg-panel/80 backdrop-blur-sm shadow-card;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-colors;
+}
+.btn-primary {
+  @apply btn bg-gold-500 text-navy-950 hover:bg-gold-400;
+}
+.btn-ghost {
+  @apply btn bg-panel-light/60 text-white hover:bg-panel-light;
+}
+.btn-danger {
+  @apply btn bg-brand-red text-white hover:bg-red-700;
+}
+.btn-success {
+  @apply btn bg-brand-green text-white hover:bg-green-700;
+}
+
+.number-plate {
+  @apply inline-flex items-center justify-center rounded-md bg-brand-red font-bold text-white shadow-inner;
+}
+
+/* Scrollbar polish */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a1338; }
+::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #2d4bb5; }

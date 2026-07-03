@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Tournament settings (single row) ───────────────────────────────
+model Tournament {
+  id            String   @id @default("main")
+  name          String   @default("Celebria Premier League")
+  tagline       String   @default("The Triangle Pavilion")
+  squadSize     Int      @default(13)
+  bidIncrement  Int      @default(2500000) // 25 Lakh default step
+  currency      String   @default("₹")
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── Team ────────────────────────────────────────────────────────────
+model Team {
+  id             String   @id @default(cuid())
+  name           String
+  owner          String
+  shortCode      String   @unique
+  logoUrl        String?
+  colorHex       String   @default("#1e3a8a")
+  totalBudget    Int      // in rupees, e.g. 500000000 for 50 Cr
+  reserveBalance Int      @default(27500000) // e.g. 2.75 Cr held for min bids
+  players        Player[]
+  bids           Bid[]
+  createdAt      DateTime @default(now())
+}
+
+// ─── Player ──────────────────────────────────────────────────────────
+model Player {
+  id         String       @id @default(cuid())
+  number     Int          @unique          // player card number (1, 2, 3…)
+  name       String
+  age        Int?
+  photoUrl   String?
+  skill      String       @default("Batsman") // Batsman | Bowler | All Rounder | Wicket Keeper
+  matches    Int          @default(0)
+  runs       Int          @default(0)
+  wickets    Int          @default(0)
+  points     Int          @default(0)
+  basePrice  Int          @default(2000000) // 20 Lakh default
+  // status: AVAILABLE | ON_AUCTION | SOLD | UNSOLD
+  status     String       @default("AVAILABLE")
+  teamId     String?
+  team       Team?        @relation(fields: [teamId], references: [id])
+  soldPrice  Int?
+  bids       Bid[]
+  createdAt  DateTime     @default(now())
+}
+
+// ─── Bid history ─────────────────────────────────────────────────────
+model Bid {
+  id        String   @id @default(cuid())
+  playerId  String
+  player    Player   @relation(fields: [playerId], references: [id])
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+  amount    Int
+  createdAt DateTime @default(now())
+}
+
+// ─── Live auction state (single row) ─────────────────────────────────
+model AuctionState {
+  id             String    @id @default("live")
+  currentPlayerId String?
+  currentBid     Int       @default(0)
+  currentTeamId  String?
+  isRunning      Boolean   @default(false)
+  updatedAt      DateTime  @updatedAt
+}

@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+build
+.git
+.gitignore
+.env
+.env.local
+.env*.local
+prisma/dev.db
+prisma/dev.db-journal
+Doc8.docx
+README.md
+*.md
+.vscode
+.idea
+terminals
