@@ -8,6 +8,7 @@ import {
   type User
 } from "firebase/auth";
 import { getDatabase, type Database } from "firebase/database";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
@@ -24,24 +25,26 @@ export const isFirebaseConfigured =
 
 let _app: FirebaseApp | null = null;
 let _db: Database | null = null;
+let _storage: FirebaseStorage | null = null;
 
 function initIfNeeded() {
   if (!isFirebaseConfigured) return;
   if (!_app) {
     _app = initializeApp(config);
     _db = getDatabase(_app);
+    _storage = getStorage(_app);
   }
 }
 initIfNeeded();
 
 export function getFirebase() {
   initIfNeeded();
-  if (!_app || !_db) {
+  if (!_app || !_db || !_storage) {
     throw new Error(
       "Firebase is not configured. Copy .env.example to .env.local and fill in values from the Firebase console."
     );
   }
-  return { app: _app, db: _db, auth: getAuth(_app) };
+  return { app: _app, db: _db, auth: getAuth(_app), storage: _storage };
 }
 
 export async function signInWithGoogle(): Promise<User> {

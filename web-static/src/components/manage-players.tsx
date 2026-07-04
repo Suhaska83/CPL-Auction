@@ -4,9 +4,11 @@ import {
   bulkUpsertPlayers,
   deletePlayer,
   parsePlayersCsv,
+  swapPlayerNumbers,
   upsertPlayer,
   type PlayerInput
 } from "@/lib/manage-actions";
+import { ImageUpload } from "@/components/image-upload";
 import type { Player, Team } from "@/types";
 
 const SKILLS = ["Batsman", "Bowler", "All Rounder", "Wicket Keeper"];
@@ -80,6 +82,23 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
     setErr(null);
     try {
       await deletePlayer(p.id);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function move(p: Player, dir: -1 | 1) {
+    // Find the previous/next player in current sort order (by number)
+    const sorted = players.slice().sort((a, b) => a.number - b.number);
+    const idx = sorted.findIndex((x) => x.id === p.id);
+    const neighbour = sorted[idx + dir];
+    if (!neighbour) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      await swapPlayerNumbers(p, neighbour);
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -212,16 +231,38 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
                   {p.teamId ? teamById[p.teamId]?.name ?? p.teamId : "—"}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <button className="btn-ghost text-xs" onClick={() => setDraft({ ...p })} disabled={busy}>
-                    Edit
-                  </button>
-                  <button
-                    className="btn-danger ml-1 text-xs"
-                    onClick={() => remove(p)}
-                    disabled={busy}
-                  >
-                    Delete
-                  </button>
+                  <div className="inline-flex items-center gap-1">
+                    <button
+                      className="rounded bg-navy-800 px-2 py-1 text-xs text-white/80 hover:bg-navy-700 disabled:opacity-40"
+                      onClick={() => move(p, -1)}
+                      disabled={busy}
+                      title="Move up (swap number with the previous player)"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className="rounded bg-navy-800 px-2 py-1 text-xs text-white/80 hover:bg-navy-700 disabled:opacity-40"
+                      onClick={() => move(p, 1)}
+                      disabled={busy}
+                      title="Move down"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      className="btn-ghost ml-1 text-xs"
+                      onClick={() => setDraft({ ...p })}
+                      disabled={busy}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn-danger text-xs"
+                      onClick={() => remove(p)}
+                      disabled={busy}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -313,14 +354,15 @@ function PlayerForm({
           />
           <Hint>{formatCompact(draft.basePrice)}</Hint>
         </Field>
-        <Field label="Photo URL" span="col-span-2 md:col-span-4">
-          <input
-            className="input"
-            placeholder="https://…/player.jpg"
-            value={draft.photoUrl ?? ""}
-            onChange={(e) => set("photoUrl", e.target.value || null)}
+        <div className="col-span-2 md:col-span-4">
+          <ImageUpload
+            value={draft.photoUrl}
+            onChange={(v) => set("photoUrl", v)}
+            folder="players"
+            label="Player photo"
+            aspect="square"
           />
-        </Field>
+        </div>
         <Field label="Matches">
           <input
             type="number"

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { clsx } from "clsx";
 import { AdminPanel } from "@/components/admin-panel";
+import { BackupPanel } from "@/components/backup-panel";
 import { ManagePlayers } from "@/components/manage-players";
 import { ManageTeams } from "@/components/manage-teams";
 import { signInWithGoogle, signOut } from "@/firebase";
@@ -15,12 +16,13 @@ import {
 } from "@/hooks/useLiveData";
 import { claimAdmin } from "@/lib/auction-actions";
 
-type Tab = "auction" | "teams" | "players";
+type Tab = "auction" | "teams" | "players" | "backup";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "auction", label: "Live Auction" },
   { id: "teams", label: "Manage Teams" },
-  { id: "players", label: "Manage Players" }
+  { id: "players", label: "Manage Players" },
+  { id: "backup", label: "Backup" }
 ];
 
 export function AdminPage() {
@@ -170,6 +172,7 @@ export function AdminPage() {
       )}
       {tab === "teams" && <ManageTeams teams={teams} />}
       {tab === "players" && <ManagePlayers players={players} teams={teams} />}
+      {tab === "backup" && <BackupPanel />}
     </section>
   );
 }

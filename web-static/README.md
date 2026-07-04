@@ -11,7 +11,8 @@ A **pure client-side** version of the CPL Auction site. All auction state lives 
 1. Go to <https://console.firebase.google.com> → **Add project** → name e.g. `cpl-auction` → disable Analytics (not needed).
 2. **Build → Realtime Database → Create Database** → pick a region (choose the one closest to you) → start in **locked mode** (we'll set rules from this repo).
 3. **Build → Authentication → Get started → Sign-in method → Google → Enable** (add a support email).
-4. **Project settings → General → Your apps → Add app → Web (`</>`)** → nickname it → **Register**. Copy the config object shown.
+4. **Build → Storage → Get started** → choose the same region → start in production mode. Then **Rules** tab → paste the contents of `storage.rules` → **Publish**. (Required for uploading team logos and player photos through the app.)
+5. **Project settings → General → Your apps → Add app → Web (`</>`)** → nickname it → **Register**. Copy the config object shown.
 
 ### 2. Wire up your local dev
 

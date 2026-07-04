@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { formatCompact, LAKH } from "@/lib/format";
-import { deleteTeam, upsertTeam, type TeamInput } from "@/lib/manage-actions";
+import {
+  bulkUpsertTeams,
+  deleteTeam,
+  parseTeamsCsv,
+  upsertTeam,
+  type TeamInput
+} from "@/lib/manage-actions";
+import { ImageUpload } from "@/components/image-upload";
 import type { Team } from "@/types";
 
 const CRORE = 10_000_000;
@@ -19,13 +26,17 @@ function empty(): TeamInput {
 
 export function ManageTeams({ teams }: { teams: Team[] }) {
   const [draft, setDraft] = useState<TeamInput | null>(null);
+  const [csvOpen, setCsvOpen] = useState(false);
+  const [csvText, setCsvText] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   async function save() {
     if (!draft) return;
     setBusy(true);
     setErr(null);
+    setInfo(null);
     try {
       await upsertTeam(draft);
       setDraft(null);
@@ -49,17 +60,85 @@ export function ManageTeams({ teams }: { teams: Team[] }) {
     }
   }
 
+  async function importCsv() {
+    setBusy(true);
+    setErr(null);
+    setInfo(null);
+    try {
+      const rows = parseTeamsCsv(csvText);
+      if (rows.length === 0) throw new Error("No valid rows found in CSV.");
+      await bulkUpsertTeams(rows);
+      setInfo(`Imported ${rows.length} team(s).`);
+      setCsvText("");
+      setCsvOpen(false);
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="text-sm text-white/60">{teams.length} team(s)</div>
-        <button className="btn-primary" onClick={() => setDraft(empty())} disabled={busy}>
-          + Add team
-        </button>
+        <div className="ml-auto flex gap-2">
+          <button
+            className="btn-ghost"
+            onClick={() => setCsvOpen((v) => !v)}
+            disabled={busy}
+          >
+            {csvOpen ? "Hide CSV import" : "Bulk import (CSV)"}
+          </button>
+          <button className="btn-primary" onClick={() => setDraft(empty())} disabled={busy}>
+            + Add team
+          </button>
+        </div>
       </div>
 
       {err && (
         <div className="card border-red-700/50 bg-red-900/30 p-3 text-sm text-red-300">{err}</div>
+      )}
+      {info && (
+        <div className="card border-green-700/50 bg-green-900/30 p-3 text-sm text-green-300">
+          {info}
+        </div>
+      )}
+
+      {csvOpen && (
+        <div className="card space-y-2 p-4">
+          <div className="font-display text-sm font-bold uppercase text-gold-400">
+            Paste CSV (from Google Sheets / Excel)
+          </div>
+          <p className="text-xs text-white/60">
+            First row is the header. <code>name</code> and <code>owner</code> are required;{" "}
+            <code>shortCode, colorHex, totalBudget, reserveBalance, logoUrl</code> are optional.
+            Rows with an existing team name will be updated.
+          </p>
+          <pre className="rounded bg-black/40 p-2 text-[11px] text-white/70">
+{`name,owner,shortCode,colorHex,totalBudget,reserveBalance
+Fortune Royals,Nirmal,FR,#c9a227,500000000,27500000
+Fortune Challengers,Abhishek,FC,#eab308,500000000,27500000`}
+          </pre>
+          <textarea
+            className="input h-32 font-mono text-xs"
+            value={csvText}
+            onChange={(e) => setCsvText(e.target.value)}
+            placeholder="paste rows here…"
+          />
+          <div className="flex justify-end gap-2">
+            <button className="btn-ghost" onClick={() => setCsvOpen(false)} disabled={busy}>
+              Cancel
+            </button>
+            <button
+              className="btn-primary"
+              onClick={importCsv}
+              disabled={busy || !csvText.trim()}
+            >
+              {busy ? "Importing…" : "Import rows"}
+            </button>
+          </div>
+        </div>
       )}
 
       {draft && (
@@ -172,14 +251,15 @@ function TeamForm({
             />
           </div>
         </Field>
-        <Field label="Logo URL" span="md:col-span-2">
-          <input
-            className="input"
-            placeholder="https://…/team-logo.png"
-            value={draft.logoUrl ?? ""}
-            onChange={(e) => set("logoUrl", e.target.value || null)}
+        <div className="md:col-span-2">
+          <ImageUpload
+            value={draft.logoUrl}
+            onChange={(v) => set("logoUrl", v)}
+            folder="logos"
+            label="Team logo"
+            aspect="square"
           />
-        </Field>
+        </div>
         <Field label="Total budget (₹)">
           <input
             type="number"

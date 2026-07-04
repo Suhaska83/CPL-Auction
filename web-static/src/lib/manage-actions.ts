@@ -144,6 +144,65 @@ export async function bulkUpsertPlayers(players: PlayerInput[]) {
   for (const p of players) await upsertPlayer(p);
 }
 
+// ─── CSV bulk import for teams ─────────────────────────────────────
+// Accepted header row (case-insensitive, order-flexible):
+//   name, owner, shortCode, colorHex, totalBudget, reserveBalance, logoUrl
+// Only `name` and `owner` are required.
+export function parseTeamsCsv(text: string): TeamInput[] {
+  const rows = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (rows.length === 0) return [];
+  const header = rows[0].split(",").map((h) => h.trim().toLowerCase());
+  for (const r of ["name", "owner"]) {
+    if (!header.includes(r)) {
+      throw new Error("CSV header must include: name, owner");
+    }
+  }
+  const idxOf = (k: string) => header.indexOf(k);
+  const out: TeamInput[] = [];
+  for (let i = 1; i < rows.length; i++) {
+    const cells = rows[i].split(",").map((c) => c.trim());
+    const name = cells[idxOf("name")];
+    const owner = cells[idxOf("owner")];
+    if (!name || !owner) continue;
+    out.push({
+      name,
+      owner,
+      shortCode:
+        (idxOf("shortcode") >= 0 && cells[idxOf("shortcode")]) ||
+        name.slice(0, 3).toUpperCase(),
+      colorHex:
+        (idxOf("colorhex") >= 0 && cells[idxOf("colorhex")]) || "#1e3a8a",
+      logoUrl:
+        (idxOf("logourl") >= 0 && cells[idxOf("logourl")]) || null,
+      totalBudget:
+        idxOf("totalbudget") >= 0 && cells[idxOf("totalbudget")]
+          ? Number(cells[idxOf("totalbudget")])
+          : 500_000_000,
+      reserveBalance:
+        idxOf("reservebalance") >= 0 && cells[idxOf("reservebalance")]
+          ? Number(cells[idxOf("reservebalance")])
+          : 27_500_000
+    });
+  }
+  return out;
+}
+
+export async function bulkUpsertTeams(teams: TeamInput[]) {
+  for (const t of teams) await upsertTeam(t);
+}
+
+// ─── Reorder: swap two players' numbers ────────────────────────────
+export async function swapPlayerNumbers(a: Player, b: Player) {
+  const { db } = getFirebase();
+  await update(ref(db), {
+    [`players/${a.id}/number`]: b.number,
+    [`players/${b.id}/number`]: a.number
+  });
+}
+
 // ─── Tournament settings (name, tagline, squadSize, bidIncrement) ─
 export async function updateTournament(patch: {
   name?: string;
