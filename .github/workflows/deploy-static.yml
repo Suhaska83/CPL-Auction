@@ -35,14 +35,22 @@ jobs:
           cache: "npm"
           cache-dependency-path: web-static/package-lock.json
 
+      - name: Configure Pages
+        # Auto-enables Pages via API when the workflow has permissions, and
+        # exposes ${{ steps.pages.outputs.base_path }} that we could use instead
+        # of the VITE_BASE variable if you prefer zero manual configuration.
+        id: pages
+        uses: actions/configure-pages@v5
+
       - name: Install
         run: npm ci
 
       - name: Build
         env:
-          # For a custom domain (CNAME file in public/) leave VITE_BASE unset (default "/").
-          # For a project page URL (<user>.github.io/<repo>) set VITE_BASE to "/<repo>/".
-          VITE_BASE: ${{ vars.VITE_BASE }}
+          # Falls back to actions/configure-pages' auto-detected base_path when
+          # the VITE_BASE variable is unset. Works for both project pages
+          # (/<repo>/) and custom domains (/).
+          VITE_BASE: ${{ vars.VITE_BASE || steps.pages.outputs.base_path }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_DATABASE_URL: ${{ secrets.VITE_FIREBASE_DATABASE_URL }}
