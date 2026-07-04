@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
+import { clsx } from "clsx";
 import { AdminPanel } from "@/components/admin-panel";
+import { ManagePlayers } from "@/components/manage-players";
+import { ManageTeams } from "@/components/manage-teams";
 import { signInWithGoogle, signOut } from "@/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -12,12 +15,21 @@ import {
 } from "@/hooks/useLiveData";
 import { claimAdmin } from "@/lib/auction-actions";
 
+type Tab = "auction" | "teams" | "players";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "auction", label: "Live Auction" },
+  { id: "teams", label: "Manage Teams" },
+  { id: "players", label: "Manage Players" }
+];
+
 export function AdminPage() {
   const { user, loading, isAdmin, adminNodeExists } = useAuth();
   const { value: tournament } = useTournament();
   const { players } = usePlayers();
   const { teams } = useTeams();
   const { state } = useAuctionState();
+  const [tab, setTab] = useState<Tab>("auction");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -46,9 +58,7 @@ export function AdminPage() {
     }
   }
 
-  if (loading) {
-    return <div className="card p-6 text-white/60">Loading…</div>;
-  }
+  if (loading) return <div className="card p-6 text-white/60">Loading…</div>;
 
   if (!user) {
     return (
@@ -87,8 +97,8 @@ export function AdminPage() {
             Not authorised
           </div>
           <p className="text-white/70">
-            You're signed in as <b>{user.email ?? user.displayName}</b>, but this account
-            is not on the admin list.
+            You're signed in as <b>{user.email ?? user.displayName}</b>, but this
+            account is not on the admin list.
           </p>
           <div className="rounded-md bg-navy-800/80 p-3 text-sm">
             <div className="text-white/50">Your Firebase UID:</div>
@@ -111,7 +121,7 @@ export function AdminPage() {
 
           {adminNodeExists === true && (
             <p className="text-white/70">
-              Admin is already configured. Ask the existing admin (or open the Firebase
+              Admin is already configured. Ask the existing admin (or open Firebase
               console → Realtime Database → <code>/admins</code>) to add your UID.
             </p>
           )}
@@ -130,14 +140,36 @@ export function AdminPage() {
           Sign out ({user.email ?? user.displayName})
         </button>
       </header>
-      <AdminPanel
-        tournament={tournament}
-        teams={stats}
-        players={players}
-        state={state}
-        counts={counts}
-        currentPlayer={currentPlayer}
-      />
+
+      <div className="flex flex-wrap items-center gap-1 border-b border-panel-border/60">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={clsx(
+              "-mb-px rounded-t-md px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-colors",
+              tab === t.id
+                ? "border border-b-transparent border-panel-border bg-panel text-gold-400"
+                : "text-white/60 hover:text-white"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "auction" && (
+        <AdminPanel
+          tournament={tournament}
+          teams={stats}
+          players={players}
+          state={state}
+          counts={counts}
+          currentPlayer={currentPlayer}
+        />
+      )}
+      {tab === "teams" && <ManageTeams teams={teams} />}
+      {tab === "players" && <ManagePlayers players={players} teams={teams} />}
     </section>
   );
 }
