@@ -12,6 +12,9 @@ build
 .DS_Store
 *.pem
 Doc8.docx
+# Word temporary lock files (appear while a .docx is open in Word)
+~$*.docx
+~$*.doc
 
 # debug
 npm-debug.log*
