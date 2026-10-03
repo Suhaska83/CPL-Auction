@@ -22,7 +22,14 @@ export async function startPlayer(playerId: string) {
 }
 
 // ─── Place a bid ───────────────────────────────────────────────────
-export async function placeBid(teamId: string, tournamentIncrement: number) {
+// If `customAmount` is provided, that exact rupee value is used.
+// Otherwise bumps the current bid by `tournamentIncrement` (or to the
+// player's base price if no bids have been placed yet).
+export async function placeBid(
+  teamId: string,
+  tournamentIncrement: number,
+  customAmount?: number
+) {
   const { db } = getFirebase();
   const [stateSnap, teamSnap, playersSnap] = await Promise.all([
     get(ref(db, "state")),
@@ -31,7 +38,7 @@ export async function placeBid(teamId: string, tournamentIncrement: number) {
   ]);
   const state = stateSnap.val() as AuctionState | null;
   const team = teamSnap.val() as Team | null;
-  if (!state?.currentPlayerId) throw new Error("No active player");
+  if (!state?.currentPlayerId) throw new Error("No active player on auction. Click \u201CStart\u201D on a player first.");
   if (!team) throw new Error("Team not found");
 
   const player = (playersSnap.val() as Record<string, Player> | null)?.[
@@ -47,12 +54,26 @@ export async function placeBid(teamId: string, tournamentIncrement: number) {
   const maxBid = Math.max(0, balance - team.reserveBalance);
 
   const nextAmount =
-    state.currentBid > 0
-      ? state.currentBid + tournamentIncrement
-      : player.basePrice;
+    typeof customAmount === "number" && Number.isFinite(customAmount) && customAmount > 0
+      ? Math.round(customAmount)
+      : state.currentBid > 0
+        ? state.currentBid + tournamentIncrement
+        : player.basePrice;
 
+  if (nextAmount < player.basePrice) {
+    throw new Error(
+      `Bid (${nextAmount}) must be at least the base price (${player.basePrice}).`
+    );
+  }
+  if (state.currentBid > 0 && nextAmount <= state.currentBid) {
+    throw new Error(
+      `Bid (${nextAmount}) must be greater than the current bid (${state.currentBid}).`
+    );
+  }
   if (nextAmount > maxBid) {
-    throw new Error(`Bid exceeds team's max bid capacity (${maxBid})`);
+    throw new Error(
+      `Bid (${nextAmount}) exceeds ${team.name}'s max bid capacity (${maxBid}).`
+    );
   }
 
   const bidsRef = ref(db, `bids/${player.id}`);
