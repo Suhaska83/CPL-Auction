@@ -20,7 +20,9 @@ function empty(): TeamInput {
     colorHex: "#1e3a8a",
     logoUrl: null,
     totalBudget: 50 * CRORE,
-    reserveBalance: 275 * LAKH
+    reserveBalance: 275 * LAKH,
+    captainName: null,
+    captainPhone: null
   };
 }
 
@@ -112,13 +114,13 @@ export function ManageTeams({ teams }: { teams: Team[] }) {
           </div>
           <p className="text-xs text-white/60">
             First row is the header. <code>name</code> and <code>owner</code> are required;{" "}
-            <code>shortCode, colorHex, totalBudget, reserveBalance, logoUrl</code> are optional.
-            Rows with an existing team name will be updated.
+            <code>shortCode, colorHex, totalBudget, reserveBalance, logoUrl, captainName, captainPhone</code>{" "}
+            are optional. Rows with an existing team name will be updated.
           </p>
           <pre className="rounded bg-black/40 p-2 text-[11px] text-white/70">
-{`name,owner,shortCode,colorHex,totalBudget,reserveBalance
-Fortune Royals,Nirmal,FR,#c9a227,500000000,27500000
-Fortune Challengers,Abhishek,FC,#eab308,500000000,27500000`}
+{`name,owner,shortCode,colorHex,totalBudget,reserveBalance,captainName,captainPhone
+Fortune Royals,Nirmal,FR,#c9a227,500000000,27500000,Rohit Sharma,9876543210
+Fortune Challengers,Abhishek,FC,#eab308,500000000,27500000,Virat Kohli,9123456780`}
           </pre>
           <textarea
             className="input h-32 font-mono text-xs"
@@ -281,6 +283,24 @@ function TeamForm({
             onChange={(e) => set("reserveBalance", Number(e.target.value))}
           />
           <Hint>{formatCompact(draft.reserveBalance)} held back for minimum bids</Hint>
+        </Field>
+        <Field label="Captain name">
+          <input
+            className="input"
+            placeholder="e.g. Rohit Sharma"
+            value={draft.captainName ?? ""}
+            onChange={(e) => set("captainName", e.target.value || null)}
+          />
+        </Field>
+        <Field label="Captain phone (WhatsApp)">
+          <input
+            type="tel"
+            className="input"
+            placeholder="e.g. 98765 43210 or +91 98765 43210"
+            value={draft.captainPhone ?? ""}
+            onChange={(e) => set("captainPhone", e.target.value || null)}
+          />
+          <Hint>Used to send a WhatsApp message after each sale.</Hint>
         </Field>
       </div>
 

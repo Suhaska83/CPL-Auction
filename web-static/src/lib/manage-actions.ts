@@ -33,6 +33,8 @@ export async function upsertTeam(input: TeamInput) {
     colorHex: input.colorHex.trim() || "#1e3a8a",
     totalBudget: Math.max(0, Math.round(input.totalBudget)),
     reserveBalance: Math.max(0, Math.round(input.reserveBalance)),
+    captainName: input.captainName?.trim() || null,
+    captainPhone: input.captainPhone?.trim() || null,
     createdAt: existing.exists()
       ? (existing.val() as Team).createdAt ?? Date.now()
       : input.createdAt ?? Date.now()
@@ -76,6 +78,7 @@ export async function upsertPlayer(input: PlayerInput) {
     age: input.age ? Math.max(1, Math.round(input.age)) : null,
     skill: input.skill.trim() || "Batsman",
     photoUrl: input.photoUrl?.trim() || null,
+    phone: input.phone?.trim() || null,
     matches: Math.max(0, Math.round(input.matches ?? 0)),
     runs: Math.max(0, Math.round(input.runs ?? 0)),
     wickets: Math.max(0, Math.round(input.wickets ?? 0)),
@@ -124,6 +127,7 @@ export function parsePlayersCsv(text: string): PlayerInput[] {
       name,
       skill: cells[idxOf("skill")] || "Batsman",
       age: idxOf("age") >= 0 && cells[idxOf("age")] ? Number(cells[idxOf("age")]) : null,
+      phone: idxOf("phone") >= 0 ? cells[idxOf("phone")] || null : null,
       basePrice: idxOf("baseprice") >= 0 && cells[idxOf("baseprice")]
         ? Number(cells[idxOf("baseprice")])
         : 2_000_000,
@@ -184,7 +188,11 @@ export function parseTeamsCsv(text: string): TeamInput[] {
       reserveBalance:
         idxOf("reservebalance") >= 0 && cells[idxOf("reservebalance")]
           ? Number(cells[idxOf("reservebalance")])
-          : 27_500_000
+          : 27_500_000,
+      captainName:
+        idxOf("captainname") >= 0 ? cells[idxOf("captainname")] || null : null,
+      captainPhone:
+        idxOf("captainphone") >= 0 ? cells[idxOf("captainphone")] || null : null
     });
   }
   return out;

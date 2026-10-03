@@ -16,6 +16,8 @@ export interface Team {
   colorHex: string;
   totalBudget: number;
   reserveBalance: number;
+  captainName?: string | null;
+  captainPhone?: string | null;
   createdAt?: number;
 }
 
@@ -26,6 +28,7 @@ export interface Player {
   age?: number | null;
   photoUrl?: string | null;
   skill: string;
+  phone?: string | null;
   matches: number;
   runs: number;
   wickets: number;

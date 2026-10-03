@@ -25,6 +25,7 @@ function empty(number: number): PlayerInput {
     age: null,
     skill: "Batsman",
     photoUrl: null,
+    phone: null,
     matches: 0,
     runs: 0,
     wickets: 0,
@@ -167,15 +168,15 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
           </div>
           <p className="text-xs text-white/60">
             First row must be a header. <code>number</code> and <code>name</code> are required;{" "}
-            <code>skill, age, basePrice, photoUrl, matches, runs, wickets, points</code> are optional.
-            Rows with an existing <code>number</code> will be updated; new numbers become new
-            players.
+            <code>skill, age, phone, basePrice, photoUrl, matches, runs, wickets, points</code>{" "}
+            are optional. Rows with an existing <code>number</code> will be updated; new numbers
+            become new players.
           </p>
           <pre className="rounded bg-black/40 p-2 text-[11px] text-white/70">
-{`number,name,skill,age,basePrice
-1,Abhinab Mishra,Batsman,28,2000000
-2,Praneeth,All Rounder,25,2000000
-3,Ankur,Bowler,30,2500000`}
+{`number,name,skill,age,phone,basePrice
+1,Abhinab Mishra,Batsman,28,9876543210,2000000
+2,Praneeth,All Rounder,25,9123456780,2000000
+3,Ankur,Bowler,30,9988776655,2500000`}
           </pre>
           <textarea
             className="input h-40 font-mono text-xs"
@@ -342,6 +343,16 @@ function PlayerForm({
             value={draft.age ?? ""}
             onChange={(e) => set("age", e.target.value ? Number(e.target.value) : null)}
           />
+        </Field>
+        <Field label="Phone (WhatsApp)" span="col-span-2">
+          <input
+            type="tel"
+            className="input"
+            placeholder="e.g. 98765 43210 or +91 98765 43210"
+            value={draft.phone ?? ""}
+            onChange={(e) => set("phone", e.target.value || null)}
+          />
+          <Hint>Used to send a WhatsApp message after the player is sold.</Hint>
         </Field>
         <Field label="Base price (₹)" span="col-span-2">
           <input

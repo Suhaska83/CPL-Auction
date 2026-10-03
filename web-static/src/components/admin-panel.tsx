@@ -8,6 +8,7 @@ import {
   startPlayer
 } from "@/lib/auction-actions";
 import { forceReseed, seedIfEmpty } from "@/lib/seed";
+import { WhatsAppNotify } from "@/components/whatsapp-notify";
 import type {
   AuctionState,
   Player,
@@ -15,6 +16,12 @@ import type {
   TeamStats,
   Tournament
 } from "@/types";
+
+interface LastSold {
+  player: Player;
+  team: TeamStats;
+  price: number;
+}
 
 interface Props {
   tournament: Tournament;
@@ -35,6 +42,7 @@ export function AdminPanel({
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  const [lastSold, setLastSold] = useState<LastSold | null>(null);
 
   async function run(fn: () => Promise<unknown>, successMsg?: string) {
     setBusy(true);
@@ -76,6 +84,17 @@ export function AdminPanel({
             Dismiss
           </button>
         </div>
+      )}
+
+      {/* WhatsApp notify panel — appears after a player is marked SOLD. */}
+      {lastSold && (
+        <WhatsAppNotify
+          tournament={tournament}
+          player={lastSold.player}
+          team={lastSold.team}
+          soldPrice={lastSold.price}
+          onDismiss={() => setLastSold(null)}
+        />
       )}
 
       {/* Seed + reset controls */}
@@ -173,11 +192,13 @@ export function AdminPanel({
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    const teamName = teams.find((t) => t.id === state.currentTeamId)?.name;
-                    run(
-                      markSold,
-                      `✅ SOLD ${currentPlayer.name} to ${teamName} for ₹${formatINR(state.currentBid)}.`
-                    );
+                    const team = teams.find((t) => t.id === state.currentTeamId);
+                    const price = state.currentBid;
+                    const soldPlayer = currentPlayer;
+                    run(async () => {
+                      await markSold();
+                      if (team) setLastSold({ player: soldPlayer, team, price });
+                    }, `✅ SOLD ${soldPlayer.name} to ${team?.name} for ₹${formatINR(price)}.`);
                   }}
                   className="btn-success"
                   disabled={busy || !state.currentTeamId}
