@@ -47,7 +47,7 @@ export function WelcomePage() {
       <div className="mt-6 grid w-full max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label="Teams" value="4" />
         <Stat label="Squad Size" value="13" />
-        <Stat label="Budget" value="50 Cr" />
+        <Stat label="Budget" value="₹20K" />
         <Stat label="Format" value="Live Auction" />
       </div>
     </section>

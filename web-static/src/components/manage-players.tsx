@@ -30,7 +30,7 @@ function empty(number: number): PlayerInput {
     runs: 0,
     wickets: 0,
     points: 0,
-    basePrice: 20 * LAKH,
+    basePrice: 2_000,
     status: "AVAILABLE",
     teamId: null,
     soldPrice: null

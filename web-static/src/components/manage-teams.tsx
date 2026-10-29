@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatCompact, LAKH } from "@/lib/format";
+import { formatCompact } from "@/lib/format";
 import {
   bulkUpsertTeams,
   deleteTeam,
@@ -8,9 +8,8 @@ import {
   type TeamInput
 } from "@/lib/manage-actions";
 import { ImageUpload } from "@/components/image-upload";
+import { CPL_TEAM_BUDGET } from "@/lib/constants";
 import type { Team } from "@/types";
-
-const CRORE = 10_000_000;
 
 function empty(): TeamInput {
   return {
@@ -19,8 +18,8 @@ function empty(): TeamInput {
     shortCode: "",
     colorHex: "#1e3a8a",
     logoUrl: null,
-    totalBudget: 50 * CRORE,
-    reserveBalance: 275 * LAKH,
+    totalBudget: CPL_TEAM_BUDGET,
+    reserveBalance: 0,
     captainName: null,
     captainPhone: null
   };
@@ -119,8 +118,8 @@ export function ManageTeams({ teams }: { teams: Team[] }) {
           </p>
           <pre className="rounded bg-black/40 p-2 text-[11px] text-white/70">
 {`name,owner,shortCode,colorHex,totalBudget,reserveBalance,captainName,captainPhone
-Fortune Royals,Nirmal,FR,#c9a227,500000000,27500000,Rohit Sharma,9876543210
-Fortune Challengers,Abhishek,FC,#eab308,500000000,27500000,Virat Kohli,9123456780`}
+Fortune Royals,Nirmal,FR,#c9a227,20000,0,Rohit Sharma,9876543210
+Fortune Challengers,Abhishek,FC,#eab308,20000,0,Virat Kohli,9123456780`}
           </pre>
           <textarea
             className="input h-32 font-mono text-xs"
@@ -267,7 +266,7 @@ function TeamForm({
             type="number"
             className="input"
             min={0}
-            step={LAKH}
+            step={100}
             value={draft.totalBudget}
             onChange={(e) => set("totalBudget", Number(e.target.value))}
           />
@@ -278,7 +277,7 @@ function TeamForm({
             type="number"
             className="input"
             min={0}
-            step={LAKH}
+            step={100}
             value={draft.reserveBalance}
             onChange={(e) => set("reserveBalance", Number(e.target.value))}
           />

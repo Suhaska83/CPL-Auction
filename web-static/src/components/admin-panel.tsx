@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CRORE, formatCompact, formatINR, LAKH } from "@/lib/format";
+import { formatCompact, formatINR } from "@/lib/format";
 import {
   markSold,
   markUnsold,
@@ -7,7 +7,7 @@ import {
   resetLive,
   startPlayer
 } from "@/lib/auction-actions";
-import { applyCplTournamentSettings } from "@/lib/manage-actions";
+import { applyAllTeamsBudget } from "@/lib/manage-actions";
 import { forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
 import type {
@@ -120,12 +120,12 @@ export function AdminPanel({
           disabled={busy}
           onClick={() =>
             run(
-              () => applyCplTournamentSettings(),
-              "Tournament updated: bid step ₹20,000 and tagline removed."
+              () => applyAllTeamsBudget(),
+              "All teams set to ₹20,000 budget (reserve cleared)."
             )
           }
         >
-          Set ₹20K bid step
+          Sync ₹20K team budget
         </button>
         <button
           className="btn-primary"
@@ -357,9 +357,6 @@ function TeamBidCard({
 
   const disabled = busy || !hasPlayer;
 
-  function bump(delta: number) {
-    setAmount((v) => Math.max(0, (Number.isFinite(v) ? v : 0) + delta));
-  }
   function submit() {
     if (!amount || amount <= 0) return;
     onBid(amount);
@@ -426,7 +423,7 @@ function TeamBidCard({
             <input
               type="number"
               min={0}
-              step={LAKH}
+              step={100}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
               onKeyDown={(e) => {
@@ -446,41 +443,13 @@ function TeamBidCard({
             Bid
           </button>
         </div>
-        <div className="flex flex-wrap items-center gap-1">
-          <QuickBtn onClick={() => bump(25 * LAKH)} disabled={disabled}>+25 L</QuickBtn>
-          <QuickBtn onClick={() => bump(50 * LAKH)} disabled={disabled}>+50 L</QuickBtn>
-          <QuickBtn onClick={() => bump(1 * CRORE)} disabled={disabled}>+1 Cr</QuickBtn>
-          <QuickBtn onClick={() => setAmount(team.maxBid)} disabled={disabled}>
-            = Max
-          </QuickBtn>
-          <span
-            className={`ml-auto text-[11px] ${exceedsMax ? "text-red-300" : "text-white/50"}`}
-          >
-            {formatCompact(amount)} {exceedsMax && "· over max bid"}
-          </span>
+        <div
+          className={`text-right text-[11px] ${exceedsMax ? "text-red-300" : "text-white/50"}`}
+        >
+          {formatCompact(amount)} {exceedsMax && "· over max bid"}
         </div>
       </div>
     </div>
   );
 }
 
-function QuickBtn({
-  onClick,
-  disabled,
-  children
-}: {
-  onClick: () => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="rounded bg-navy-800 px-2 py-1 text-[11px] font-semibold text-white/80 hover:bg-navy-700 disabled:opacity-40"
-    >
-      {children}
-    </button>
-  );
-}

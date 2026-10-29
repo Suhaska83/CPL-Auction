@@ -1,9 +1,7 @@
 import { ref, set, get, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
+import { CPL_TEAM_BUDGET } from "@/lib/constants";
 import type { Player, Team, Tournament } from "@/types";
-
-const CRORE = 10_000_000;
-const LAKH = 100_000;
 
 const TEAMS: Team[] = [
   {
@@ -14,8 +12,8 @@ const TEAMS: Team[] = [
     colorHex: "#c9a227",
     logoUrl:
       "https://api.dicebear.com/9.x/shapes/svg?seed=fortune-royals&backgroundColor=1e3a8a",
-    totalBudget: 50 * CRORE,
-    reserveBalance: 275 * LAKH,
+    totalBudget: CPL_TEAM_BUDGET,
+    reserveBalance: 0,
     createdAt: 1
   },
   {
@@ -26,8 +24,8 @@ const TEAMS: Team[] = [
     colorHex: "#eab308",
     logoUrl:
       "https://api.dicebear.com/9.x/shapes/svg?seed=fortune-challengers&backgroundColor=0a1746",
-    totalBudget: 50 * CRORE,
-    reserveBalance: 275 * LAKH,
+    totalBudget: CPL_TEAM_BUDGET,
+    reserveBalance: 0,
     createdAt: 2
   },
   {
@@ -38,8 +36,8 @@ const TEAMS: Team[] = [
     colorHex: "#1d4ed8",
     logoUrl:
       "https://api.dicebear.com/9.x/shapes/svg?seed=fortune-d-indians&backgroundColor=0b1a5c",
-    totalBudget: 50 * CRORE,
-    reserveBalance: 275 * LAKH,
+    totalBudget: CPL_TEAM_BUDGET,
+    reserveBalance: 0,
     createdAt: 3
   },
   {
@@ -50,8 +48,8 @@ const TEAMS: Team[] = [
     colorHex: "#ea580c",
     logoUrl:
       "https://api.dicebear.com/9.x/shapes/svg?seed=fortune-sunrisers&backgroundColor=7c2d12",
-    totalBudget: 50 * CRORE,
-    reserveBalance: 275 * LAKH,
+    totalBudget: CPL_TEAM_BUDGET,
+    reserveBalance: 0,
     createdAt: 4
   }
 ];
@@ -91,7 +89,7 @@ function buildPlayers(): Record<string, Player> {
       runs: 100 + ((i * 53) % 500),
       wickets: (i * 3) % 90,
       points: 50 + ((i * 11) % 200),
-      basePrice: 20 * LAKH,
+      basePrice: 2_000,
       status: "AVAILABLE",
       teamId: null,
       soldPrice: null
@@ -115,7 +113,7 @@ export async function seedIfEmpty(): Promise<{ seeded: boolean; message: string 
     name: "Celebria Premier League",
     tagline: "",
     squadSize: 13,
-    bidIncrement: 20_000
+    bidIncrement: 500
   };
 
   const teamMap: Record<string, Team> = {};

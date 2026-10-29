@@ -47,7 +47,7 @@ export function useTournament(): { value: Tournament; loading: boolean } {
     name: "Celebria Premier League",
     tagline: "",
     squadSize: 13,
-    bidIncrement: 20_000
+    bidIncrement: 500
   };
   const { value, loading } = useDbValue<Tournament | null>("tournament", null);
   return { value: value ?? fallback, loading };

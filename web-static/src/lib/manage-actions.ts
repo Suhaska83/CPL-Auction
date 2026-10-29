@@ -1,5 +1,6 @@
 import { get, ref, remove, set, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
+import { CPL_TEAM_BUDGET } from "@/lib/constants";
 import type { Player, Team } from "@/types";
 
 // ─── Slugify helper for stable IDs ────────────────────────────────
@@ -184,11 +185,11 @@ export function parseTeamsCsv(text: string): TeamInput[] {
       totalBudget:
         idxOf("totalbudget") >= 0 && cells[idxOf("totalbudget")]
           ? Number(cells[idxOf("totalbudget")])
-          : 500_000_000,
+          : CPL_TEAM_BUDGET,
       reserveBalance:
         idxOf("reservebalance") >= 0 && cells[idxOf("reservebalance")]
           ? Number(cells[idxOf("reservebalance")])
-          : 27_500_000,
+          : 0,
       captainName:
         idxOf("captainname") >= 0 ? cells[idxOf("captainname")] || null : null,
       captainPhone:
@@ -226,7 +227,15 @@ export async function updateTournament(patch: {
   if (Object.keys(updates).length) await update(ref(db), updates);
 }
 
-/** CPL defaults: ₹20,000 bid step, no header tagline. */
-export async function applyCplTournamentSettings() {
-  await updateTournament({ tagline: "", bidIncrement: 20_000 });
+/** Set every team's total budget to CPL_TEAM_BUDGET and clear reserve holdback. */
+export async function applyAllTeamsBudget() {
+  const { db } = getFirebase();
+  const snap = await get(ref(db, "teams"));
+  if (!snap.exists()) return;
+  const updates: Record<string, unknown> = {};
+  for (const id of Object.keys(snap.val() as Record<string, unknown>)) {
+    updates[`teams/${id}/totalBudget`] = CPL_TEAM_BUDGET;
+    updates[`teams/${id}/reserveBalance`] = 0;
+  }
+  if (Object.keys(updates).length) await update(ref(db), updates);
 }
