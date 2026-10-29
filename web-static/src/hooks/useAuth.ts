@@ -29,7 +29,8 @@ export function useAuth() {
     // Watch the /admins node so the UI can offer a "claim admin" bootstrap
     const adminsRef = ref(db, "admins");
     const unsubAdmins = onValue(adminsRef, (snap) => {
-      setAdminNodeExists(snap.exists());
+      // Empty `/admins` {} still "exists" but has no admin UIDs — treat as unconfigured.
+      setAdminNodeExists(snap.hasChildren());
     });
 
     let unsubUser: (() => void) | null = null;

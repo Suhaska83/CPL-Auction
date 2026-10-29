@@ -51,9 +51,12 @@ export function AdminPage() {
     try {
       await claimAdmin(user.uid);
     } catch (e) {
+      const code = (e as { code?: string }).code ?? "";
+      const base = (e as Error).message;
       setErr(
-        (e as Error).message +
-          " — the security rules may already lock this down. See README for adding your UID via Firebase console."
+        code === "PERMISSION_DENIED" || /permission/i.test(base)
+          ? `${base} — Sign in with Google, click “Claim admin” if shown, or add your UID under /admins in Firebase Realtime Database. Also republish database.rules.json from this repo (Rules tab).`
+          : `${base} — See README for adding your UID via Firebase console.`
       );
     } finally {
       setBusy(false);
@@ -122,10 +125,18 @@ export function AdminPage() {
           )}
 
           {adminNodeExists === true && (
-            <p className="text-white/70">
-              Admin is already configured. Ask the existing admin (or open Firebase
-              console → Realtime Database → <code>/admins</code>) to add your UID.
-            </p>
+            <div className="space-y-2 text-white/70">
+              <p>
+                Admin is already configured. Ask the existing admin (or open Firebase
+                console → Realtime Database → <code>/admins</code>) to add your UID as{" "}
+                <code>true</code>.
+              </p>
+              <p className="text-xs text-white/50">
+                If every action shows <b>Permission denied</b>, republish RTDB rules: Firebase
+                console → Realtime Database → Rules → paste{" "}
+                <code>web-static/database.rules.json</code> from GitHub → Publish.
+              </p>
+            </div>
           )}
         </div>
       </section>
