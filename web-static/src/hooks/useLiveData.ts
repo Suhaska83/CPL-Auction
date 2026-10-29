@@ -45,9 +45,9 @@ function toArray<T extends { id?: string }>(
 export function useTournament(): { value: Tournament; loading: boolean } {
   const fallback: Tournament = {
     name: "Celebria Premier League",
-    tagline: "The Triangle Pavilion",
+    tagline: "",
     squadSize: 13,
-    bidIncrement: 2_500_000
+    bidIncrement: 20_000
   };
   const { value, loading } = useDbValue<Tournament | null>("tournament", null);
   return { value: value ?? fallback, loading };
@@ -103,7 +103,9 @@ export function teamStats(
     .slice()
     .sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
     .map((t) => {
-      const owned = players.filter((p) => p.teamId === t.id && p.status === "SOLD");
+      const owned = players
+        .filter((p) => p.teamId === t.id && p.status === "SOLD")
+        .sort((a, b) => a.number - b.number);
       const spent = owned.reduce((s, p) => s + (p.soldPrice ?? 0), 0);
       const balance = t.totalBudget - spent;
       const maxBid = Math.max(0, balance - t.reserveBalance);

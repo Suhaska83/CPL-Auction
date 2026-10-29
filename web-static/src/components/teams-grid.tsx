@@ -1,4 +1,4 @@
-import { formatCompact } from "@/lib/format";
+import { formatCompact, formatINR } from "@/lib/format";
 import type { TeamStats } from "@/types";
 
 export function TeamsGrid({ teams }: { teams: TeamStats[] }) {
@@ -47,7 +47,10 @@ export function TeamsGrid({ teams }: { teams: TeamStats[] }) {
                     key={p.id}
                     className="rounded-md bg-panel px-2 py-1 text-xs text-white/80 ring-1 ring-panel-border"
                   >
-                    {p.name} · <span className="text-white/50">{p.skill}</span>
+                    <span className="font-semibold text-white">{p.name}</span>
+                    {p.soldPrice != null && p.soldPrice > 0 ? (
+                      <span className="text-gold-400"> · ₹{formatINR(p.soldPrice)}</span>
+                    ) : null}
                   </li>
                 ))}
               </ul>

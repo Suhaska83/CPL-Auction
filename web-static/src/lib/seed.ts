@@ -113,9 +113,9 @@ export async function seedIfEmpty(): Promise<{ seeded: boolean; message: string 
 
   const tournament: Tournament = {
     name: "Celebria Premier League",
-    tagline: "The Triangle Pavilion",
+    tagline: "",
     squadSize: 13,
-    bidIncrement: 25 * LAKH
+    bidIncrement: 20_000
   };
 
   const teamMap: Record<string, Team> = {};

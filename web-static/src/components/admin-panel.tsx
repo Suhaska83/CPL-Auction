@@ -7,6 +7,7 @@ import {
   resetLive,
   startPlayer
 } from "@/lib/auction-actions";
+import { applyCplTournamentSettings } from "@/lib/manage-actions";
 import { forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
 import type {
@@ -104,9 +105,28 @@ export function AdminPanel({
             Database
           </div>
           <div className="text-xs text-white/50">
-            Seed sample data, or wipe everything to start fresh.
+            Seed sample data, or wipe everything to start fresh. Bid step:{" "}
+            <span className="text-white/80">₹{formatINR(tournament.bidIncrement)}</span>
+            {tournament.tagline.trim() ? (
+              <>
+                {" "}
+                · Tagline: <span className="text-white/80">{tournament.tagline}</span>
+              </>
+            ) : null}
           </div>
         </div>
+        <button
+          className="btn-ghost"
+          disabled={busy}
+          onClick={() =>
+            run(
+              () => applyCplTournamentSettings(),
+              "Tournament updated: bid step ₹20,000 and tagline removed."
+            )
+          }
+        >
+          Set ₹20K bid step
+        </button>
         <button
           className="btn-primary"
           disabled={busy}

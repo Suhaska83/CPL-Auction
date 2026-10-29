@@ -221,7 +221,12 @@ export async function updateTournament(patch: {
   const { db } = getFirebase();
   const updates: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(patch)) {
-    if (v !== undefined && v !== "") updates[`tournament/${k}`] = v;
+    if (v !== undefined) updates[`tournament/${k}`] = v;
   }
   if (Object.keys(updates).length) await update(ref(db), updates);
+}
+
+/** CPL defaults: ₹20,000 bid step, no header tagline. */
+export async function applyCplTournamentSettings() {
+  await updateTournament({ tagline: "", bidIncrement: 20_000 });
 }
