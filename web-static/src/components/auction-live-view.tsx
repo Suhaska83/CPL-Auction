@@ -79,13 +79,6 @@ export function AuctionLiveView({
             </div>
           </div>
         </div>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <StatChip label="Match" value={currentPlayer.matches} />
-          <StatChip label="Run" value={currentPlayer.runs} />
-          <StatChip label="Wicket" value={currentPlayer.wickets} />
-          <StatChip label="Points" value={currentPlayer.points} />
-        </div>
       </div>
 
       {/* Team + bid */}
@@ -143,19 +136,6 @@ export function AuctionLiveView({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatChip({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center overflow-hidden rounded-md ring-1 ring-panel-border">
-      <span className="bg-navy-800 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/80">
-        {label}
-      </span>
-      <span className="bg-brand-red px-3 py-1 font-display text-sm font-bold text-white">
-        {value}
-      </span>
     </div>
   );
 }

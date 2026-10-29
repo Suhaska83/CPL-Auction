@@ -153,7 +153,6 @@ function PlayerCard({ p, team }: { p: Player; team: Team | undefined }) {
         <div className="flex flex-1 flex-col divide-y divide-panel-border/60">
           <Row label="Name" value={p.name} accent />
           <Row label="Age" value={p.age ? String(p.age) : "-"} />
-          <Row label="Point" value={p.points ? String(p.points) : "-"} />
           <Row label="Skill" value={p.skill} accent />
         </div>
       </div>

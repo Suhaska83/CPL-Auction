@@ -168,8 +168,8 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
           </div>
           <p className="text-xs text-white/60">
             First row must be a header. <code>number</code> and <code>name</code> are required;{" "}
-            <code>skill, age, phone, basePrice, photoUrl, matches, runs, wickets, points</code>{" "}
-            are optional. Rows with an existing <code>number</code> will be updated; new numbers
+            <code>skill, age, phone, basePrice, photoUrl</code> are optional. Rows with an existing{" "}
+            <code>number</code> will be updated; new numbers
             become new players.
           </p>
           <pre className="rounded bg-black/40 p-2 text-[11px] text-white/70">
@@ -374,42 +374,6 @@ function PlayerForm({
             aspect="square"
           />
         </div>
-        <Field label="Matches">
-          <input
-            type="number"
-            className="input"
-            min={0}
-            value={draft.matches}
-            onChange={(e) => set("matches", Number(e.target.value))}
-          />
-        </Field>
-        <Field label="Runs">
-          <input
-            type="number"
-            className="input"
-            min={0}
-            value={draft.runs}
-            onChange={(e) => set("runs", Number(e.target.value))}
-          />
-        </Field>
-        <Field label="Wickets">
-          <input
-            type="number"
-            className="input"
-            min={0}
-            value={draft.wickets}
-            onChange={(e) => set("wickets", Number(e.target.value))}
-          />
-        </Field>
-        <Field label="Points">
-          <input
-            type="number"
-            className="input"
-            min={0}
-            value={draft.points}
-            onChange={(e) => set("points", Number(e.target.value))}
-          />
-        </Field>
       </div>
 
       <div className="flex justify-end gap-2">

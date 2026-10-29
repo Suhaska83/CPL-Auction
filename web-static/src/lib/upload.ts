@@ -47,6 +47,24 @@ export async function uploadImage(
 
   const { storage } = getFirebase();
   const r = storageRef(storage, path);
-  await uploadBytes(r, blob, { contentType: file.type });
-  return await getDownloadURL(r);
+  try {
+    await uploadBytes(r, blob, { contentType: file.type });
+    return await getDownloadURL(r);
+  } catch (e) {
+    const code = (e as { code?: string }).code ?? "";
+    if (code === "storage/unauthorized" || code === "storage/unauthenticated") {
+      throw new Error(
+        "Upload denied: sign in on Admin with Google first, and publish storage.rules " +
+          "(Firebase console → Storage → Rules). Only signed-in admins can upload."
+      );
+    }
+    if (code === "storage/unknown" || code.includes("404") || code.includes("bucket")) {
+      throw new Error(
+        "Storage bucket not set up. In Firebase console enable Storage, then set " +
+          "VITE_FIREBASE_STORAGE_BUCKET in .env.local / GitHub Actions secrets " +
+          "(Project settings → Your apps → storageBucket, often *.appspot.com or *.firebasestorage.app)."
+      );
+    }
+    throw e;
+  }
 }
