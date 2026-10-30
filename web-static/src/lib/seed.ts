@@ -54,20 +54,36 @@ const TEAMS: Team[] = [
   }
 ];
 
-const SKILLS = ["Batsman", "Bowler", "All Rounder", "Wicket Keeper"];
-
+/** Celebria roster (from tournament registration list). */
 const PLAYER_NAMES = [
-  "Abhinab Mishra", "Praneeth", "Ankur", "Subhasish Behera", "Rishabh Anand",
-  "Mani (jeeva)", "Sunny", "Karthik", "Rohit S.", "Deepak",
-  "Vinay", "Manoj", "Arjun", "Sanjay", "Prakash",
-  "Ravi", "Nikhil", "Aakash", "Suresh", "Ganesh",
-  "Vikram", "Harish", "Naveen", "Yash", "Tarun",
-  "Ashwin", "Bhaskar", "Chirag", "Devansh", "Eshan",
-  "Farhan", "Gaurav", "Hemant", "Imran", "Jatin",
-  "Kunal", "Lokesh", "Mohit", "Nitin", "Omkar",
-  "Pankaj", "Rakesh", "Sameer", "Tushar", "Uday",
-  "Varun", "Wasim", "Yogesh", "Zaheer", "Ajay",
-  "Balaji", "Chetan"
+  "Aditya Agarwal",
+  "Amar",
+  "Amit K",
+  "Anagh",
+  "Aniruddha",
+  "Ashish M",
+  "Dhirendra",
+  "Dinesh",
+  "Jonty",
+  "Kishore",
+  "Krushna",
+  "Kuldip",
+  "Luvin",
+  "Mayur",
+  "Pankaj",
+  "Rajan Marathe",
+  "Raman",
+  "Sanket",
+  "Saravanan",
+  "Satish",
+  "Saurabh M",
+  "Shripad",
+  "Suhas Kale",
+  "Tanmay",
+  "Kish",
+  "Sagar",
+  "Saurabh",
+  "Siva"
 ];
 
 function slugId(number: number): string {
@@ -83,7 +99,7 @@ function buildPlayers(): Record<string, Player> {
       number: i + 1,
       name,
       age: 22 + (i % 15),
-      skill: SKILLS[i % SKILLS.length],
+      skill: "All Rounder",
       photoUrl: `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(name)}&radius=50`,
       matches: 40 + ((i * 7) % 60),
       runs: 100 + ((i * 53) % 500),

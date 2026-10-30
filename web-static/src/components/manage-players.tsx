@@ -107,6 +107,23 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
     }
   }
 
+  async function loadCelebriaRoster() {
+    setBusy(true);
+    setErr(null);
+    try {
+      const base = import.meta.env.BASE_URL;
+      const res = await fetch(`${base}celebria-roster.csv`);
+      if (!res.ok) throw new Error("Could not load celebria-roster.csv");
+      setCsvText(await res.text());
+      setCsvOpen(true);
+      setInfo("Celebria roster loaded — click Import rows to add/update 28 players.");
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function importCsv() {
     setBusy(true);
     setErr(null);
@@ -141,6 +158,9 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
             disabled={busy}
           >
             {csvOpen ? "Hide CSV import" : "Bulk import (CSV)"}
+          </button>
+          <button className="btn-ghost" onClick={loadCelebriaRoster} disabled={busy}>
+            Load Celebria roster
           </button>
           <button
             className="btn-primary"
