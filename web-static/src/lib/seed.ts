@@ -1,6 +1,6 @@
 import { ref, set, get, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
-import { CPL_TEAM_BUDGET } from "@/lib/constants";
+import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
 import type { Player, Team, Tournament } from "@/types";
 
 const TEAMS: Team[] = [
@@ -112,7 +112,7 @@ export async function seedIfEmpty(): Promise<{ seeded: boolean; message: string 
   const tournament: Tournament = {
     name: "Celebria Premier League",
     tagline: "",
-    squadSize: 13,
+    squadSize: CPL_SQUAD_SIZE,
     bidIncrement: 500
   };
 

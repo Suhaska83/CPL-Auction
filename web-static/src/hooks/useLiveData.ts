@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import { getFirebase, isFirebaseConfigured } from "@/firebase";
+import { CPL_SQUAD_SIZE } from "@/lib/constants";
 import type {
   AuctionState,
   Player,
@@ -46,7 +47,7 @@ export function useTournament(): { value: Tournament; loading: boolean } {
   const fallback: Tournament = {
     name: "Celebria Premier League",
     tagline: "",
-    squadSize: 13,
+    squadSize: CPL_SQUAD_SIZE,
     bidIncrement: 500
   };
   const { value, loading } = useDbValue<Tournament | null>("tournament", null);

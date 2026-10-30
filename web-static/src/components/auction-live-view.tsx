@@ -95,7 +95,7 @@ export function AuctionLiveView({
               )}
             </div>
             <div className="absolute -right-2 -top-2 rounded-md bg-navy-800 px-2 py-1 text-xs font-bold text-gold-400 ring-1 ring-panel-border">
-              PL. {currentTeam ? currentTeam.squadCount + 1 : "-"}/{currentTeam?.squadSize ?? 13}
+              PL. {currentTeam ? currentTeam.squadCount + 1 : "-"}/{currentTeam?.squadSize ?? 8}
             </div>
           </div>
           <div className="min-w-0">

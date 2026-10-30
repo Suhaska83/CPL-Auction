@@ -212,7 +212,6 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
               <th className="px-3 py-2">#</th>
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Skill</th>
-              <th className="px-3 py-2">Base</th>
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Team</th>
               <th className="px-3 py-2 text-right">Actions</th>
@@ -224,7 +223,6 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
                 <td className="px-3 py-2 font-mono text-white/70">{p.number}</td>
                 <td className="px-3 py-2 font-medium text-white">{p.name}</td>
                 <td className="px-3 py-2 text-white/70">{p.skill}</td>
-                <td className="px-3 py-2 text-white/70">{formatCompact(p.basePrice)}</td>
                 <td className="px-3 py-2">
                   <span className="chip bg-navy-800 text-white/70">{p.status}</span>
                 </td>
@@ -269,7 +267,7 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-white/50">
+                <td colSpan={6} className="px-3 py-6 text-center text-white/50">
                   No players.
                 </td>
               </tr>

@@ -7,7 +7,7 @@ import {
   resetLive,
   startPlayer
 } from "@/lib/auction-actions";
-import { applyAllTeamsBudget } from "@/lib/manage-actions";
+import { applyCplLiveSettings } from "@/lib/manage-actions";
 import { forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
 import type {
@@ -120,12 +120,12 @@ export function AdminPanel({
           disabled={busy}
           onClick={() =>
             run(
-              () => applyAllTeamsBudget(),
-              "All teams set to ₹20,000 budget (reserve cleared)."
+              () => applyCplLiveSettings(),
+              "Teams set to ₹20,000 budget; squad size set to 8."
             )
           }
         >
-          Sync ₹20K team budget
+          Sync budget & squad
         </button>
         <button
           className="btn-primary"
@@ -304,9 +304,7 @@ export function AdminPanel({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold text-white">{p.name}</div>
-                <div className="text-[11px] text-white/50">
-                  {p.skill} · Base {formatCompact(p.basePrice)}
-                </div>
+                <div className="text-[11px] text-white/50">{p.skill}</div>
               </div>
               <button
                 onClick={() =>

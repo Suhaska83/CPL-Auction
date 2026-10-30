@@ -1,6 +1,6 @@
 import { get, ref, remove, set, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
-import { CPL_TEAM_BUDGET } from "@/lib/constants";
+import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
 import type { Player, Team } from "@/types";
 
 // ─── Slugify helper for stable IDs ────────────────────────────────
@@ -238,4 +238,15 @@ export async function applyAllTeamsBudget() {
     updates[`teams/${id}/reserveBalance`] = 0;
   }
   if (Object.keys(updates).length) await update(ref(db), updates);
+}
+
+/** Push live tournament squad size (does not change existing squads). */
+export async function applyCplSquadSize() {
+  await updateTournament({ squadSize: CPL_SQUAD_SIZE });
+}
+
+/** Team budgets + squad size for this CPL format. */
+export async function applyCplLiveSettings() {
+  await applyAllTeamsBudget();
+  await applyCplSquadSize();
 }

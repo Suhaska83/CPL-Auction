@@ -167,14 +167,7 @@ function PlayerCard({ p, team }: { p: Player; team: Team | undefined }) {
               {p.soldPrice ? formatCompact(p.soldPrice) : "-"}
             </div>
           </div>
-        ) : (
-          <div className="text-right">
-            <div className="text-white/50">Base</div>
-            <div className="font-display text-sm font-bold text-white">
-              {formatCompact(p.basePrice)}
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
     </article>
   );
