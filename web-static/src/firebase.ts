@@ -23,6 +23,9 @@ const config = {
 export const isFirebaseConfigured =
   !!config.apiKey && !!config.databaseURL && !!config.projectId;
 
+/** True when a Storage bucket is set in env (optional — uploads can use inline data URLs). */
+export const storageBucketConfigured = !!config.storageBucket?.trim();
+
 let _app: FirebaseApp | null = null;
 let _db: Database | null = null;
 let _storage: FirebaseStorage | null = null;
@@ -32,7 +35,9 @@ function initIfNeeded() {
   if (!_app) {
     _app = initializeApp(config);
     _db = getDatabase(_app);
-    _storage = getStorage(_app);
+    _storage = storageBucketConfigured
+      ? getStorage(_app, `gs://${config.storageBucket.trim()}`)
+      : getStorage(_app);
   }
 }
 initIfNeeded();

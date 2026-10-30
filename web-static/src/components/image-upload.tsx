@@ -18,14 +18,23 @@ export function ImageUpload({
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
     setBusy(true);
     setErr(null);
+    setInfo(null);
     try {
       const url = await uploadImage(file, folder);
       onChange(url);
+      if (url.startsWith("data:")) {
+        setErr(null);
+        // Brief hint — not an error; stored in Realtime Database without Firebase Storage.
+        setInfo(
+          "Saved (compressed). If you prefer hosted URLs, paste a link below or enable Firebase Storage."
+        );
+      }
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -99,6 +108,7 @@ export function ImageUpload({
             onChange={(e) => onChange(e.target.value || null)}
             disabled={busy}
           />
+          {info && <div className="text-xs text-green-300/90">{info}</div>}
           {err && <div className="text-xs text-red-300">{err}</div>}
         </div>
       </div>
