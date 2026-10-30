@@ -218,6 +218,7 @@ export async function updateTournament(patch: {
   tagline?: string;
   squadSize?: number;
   bidIncrement?: number;
+  managedByLogoUrl?: string | null;
 }) {
   const { db } = getFirebase();
   const updates: Record<string, unknown> = {};

@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
+import { WelcomeDefaultLogo } from "@/components/welcome-default-logo";
+import { useTournament } from "@/hooks/useLiveData";
 
 export function WelcomePage() {
+  const { value: tournament } = useTournament();
+  const logoUrl = tournament.managedByLogoUrl?.trim();
+
   return (
     <section className="field-lights relative flex min-h-[calc(100vh-140px)] flex-col items-center justify-center gap-10 text-center">
       <div className="text-xs font-semibold uppercase tracking-[0.4em] text-white/70">
@@ -8,20 +13,15 @@ export function WelcomePage() {
       </div>
 
       <div className="relative">
-        <svg
-          viewBox="0 0 200 220"
-          className="mx-auto h-40 w-40 drop-shadow-[0_0_30px_rgba(250,204,21,0.35)] sm:h-48 sm:w-48"
-          fill="none"
-        >
-          <path
-            d="M100 8L188 40V116C188 168 148 200 100 212C52 200 12 168 12 116V40L100 8Z"
-            stroke="white"
-            strokeWidth="6"
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt="Managed by"
+            className="mx-auto h-40 w-40 object-contain drop-shadow-[0_0_30px_rgba(250,204,21,0.35)] sm:h-48 sm:w-48"
           />
-          <circle cx="100" cy="110" r="22" stroke="white" strokeWidth="5" fill="none" />
-          <line x1="72" y1="140" x2="128" y2="86" stroke="white" strokeWidth="5" strokeLinecap="round" />
-          <line x1="72" y1="126" x2="128" y2="72" stroke="white" strokeWidth="5" strokeLinecap="round" />
-        </svg>
+        ) : (
+          <WelcomeDefaultLogo className="mx-auto h-40 w-40 drop-shadow-[0_0_30px_rgba(250,204,21,0.35)] sm:h-48 sm:w-48" />
+        )}
         <div className="mt-6 font-display text-6xl font-bold tracking-tight sm:text-7xl">
           CPL<span className="text-gold-400">Auction</span>
           <sup className="ml-1 text-lg text-white/70">TM</sup>

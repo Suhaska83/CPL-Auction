@@ -113,7 +113,8 @@ export async function seedIfEmpty(): Promise<{ seeded: boolean; message: string 
     name: "Celebria Premier League",
     tagline: "",
     squadSize: CPL_SQUAD_SIZE,
-    bidIncrement: 500
+    bidIncrement: 500,
+    managedByLogoUrl: null
   };
 
   const teamMap: Record<string, Team> = {};

@@ -5,6 +5,8 @@ export interface Tournament {
   tagline: string;
   squadSize: number;
   bidIncrement: number;
+  /** Welcome page logo under “Managed By” (optional). */
+  managedByLogoUrl?: string | null;
 }
 
 export interface Team {

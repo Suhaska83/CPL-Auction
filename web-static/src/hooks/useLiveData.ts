@@ -48,7 +48,8 @@ export function useTournament(): { value: Tournament; loading: boolean } {
     name: "Celebria Premier League",
     tagline: "",
     squadSize: CPL_SQUAD_SIZE,
-    bidIncrement: 500
+    bidIncrement: 500,
+    managedByLogoUrl: null
   };
   const { value, loading } = useDbValue<Tournament | null>("tournament", null);
   return { value: value ?? fallback, loading };

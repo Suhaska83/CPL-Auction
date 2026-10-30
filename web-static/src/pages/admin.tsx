@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { clsx } from "clsx";
 import { AdminPanel } from "@/components/admin-panel";
 import { BackupPanel } from "@/components/backup-panel";
+import { ManageBranding } from "@/components/manage-branding";
 import { ManagePlayers } from "@/components/manage-players";
 import { ManageTeams } from "@/components/manage-teams";
 import { signInWithGoogle, signOut } from "@/firebase";
@@ -16,12 +17,13 @@ import {
 } from "@/hooks/useLiveData";
 import { claimAdmin } from "@/lib/auction-actions";
 
-type Tab = "auction" | "teams" | "players" | "backup";
+type Tab = "auction" | "teams" | "players" | "branding" | "backup";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "auction", label: "Live Auction" },
   { id: "teams", label: "Manage Teams" },
   { id: "players", label: "Manage Players" },
+  { id: "branding", label: "Branding" },
   { id: "backup", label: "Backup" }
 ];
 
@@ -183,6 +185,7 @@ export function AdminPage() {
       )}
       {tab === "teams" && <ManageTeams teams={teams} />}
       {tab === "players" && <ManagePlayers players={players} teams={teams} />}
+      {tab === "branding" && <ManageBranding tournament={tournament} />}
       {tab === "backup" && <BackupPanel />}
     </section>
   );
