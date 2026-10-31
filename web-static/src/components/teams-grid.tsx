@@ -1,8 +1,9 @@
 import { CaptionSquadRow, SoldPlayerRow } from "@/components/sold-player-row";
 import { formatCompact } from "@/lib/format";
-import type { TeamStats } from "@/types";
+import { resolveCaptionPhotoUrl } from "@/lib/team-utils";
+import type { Player, TeamStats } from "@/types";
 
-export function TeamsGrid({ teams }: { teams: TeamStats[] }) {
+export function TeamsGrid({ teams, players }: { teams: TeamStats[]; players: Player[] }) {
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       {teams.map((t) => (
@@ -43,7 +44,7 @@ export function TeamsGrid({ teams }: { teams: TeamStats[] }) {
             </div>
             <ul className="flex flex-col gap-2">
               <li>
-                <CaptionSquadRow team={t} />
+                <CaptionSquadRow team={t} photoUrl={resolveCaptionPhotoUrl(t, players)} />
               </li>
               {t.players.map((p) => (
                 <li key={p.id}>

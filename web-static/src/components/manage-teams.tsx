@@ -18,6 +18,7 @@ function empty(): TeamInput {
     shortCode: "",
     colorHex: "#1e3a8a",
     logoUrl: null,
+    captionPhotoUrl: null,
     totalBudget: CPL_TEAM_BUDGET,
     reserveBalance: 0
   };
@@ -250,6 +251,15 @@ function TeamForm({
             />
           </div>
         </Field>
+        <div className="md:col-span-2">
+          <ImageUpload
+            value={draft.captionPhotoUrl ?? null}
+            onChange={(v) => set("captionPhotoUrl", v)}
+            folder="captions"
+            label="Caption photo (squad list)"
+            aspect="square"
+          />
+        </div>
         <div className="md:col-span-2">
           <ImageUpload
             value={draft.logoUrl}

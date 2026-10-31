@@ -143,7 +143,7 @@ async function uploadToFirebaseStorage(
  */
 export async function uploadImage(
   file: File,
-  folder: "logos" | "players" | "misc" = "misc"
+  folder: "logos" | "players" | "captions" | "misc" = "misc"
 ): Promise<string> {
   if (file.size > MAX_BYTES) throw new Error("File too large (max 3 MB).");
 

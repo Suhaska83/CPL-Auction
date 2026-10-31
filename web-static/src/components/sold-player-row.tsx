@@ -40,18 +40,31 @@ export function SoldPlayerRow({
 }
 
 /** Team caption (not auctioned) — always first in squad list. */
-export function CaptionSquadRow({ team }: { team: Pick<TeamStats, "caption" | "name" | "logoUrl" | "shortCode" | "colorHex"> }) {
+export function CaptionSquadRow({
+  team,
+  photoUrl
+}: {
+  team: Pick<TeamStats, "caption" | "name" | "shortCode" | "colorHex">;
+  photoUrl?: string | null;
+}) {
+  const initials = team.caption
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div className="flex w-full items-center gap-4 rounded-md border border-gold-500/40 bg-gold-500/5 px-3 py-2">
       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-gold-500/80">
-        {team.logoUrl ? (
-          <img src={team.logoUrl} alt="" className="h-full w-full object-cover" />
+        {photoUrl ? (
+          <img src={photoUrl} alt="" className="h-full w-full object-cover" />
         ) : (
           <div
             className="grid h-full w-full place-items-center text-sm font-bold text-white/80"
             style={{ backgroundColor: team.colorHex + "44" }}
           >
-            {team.shortCode}
+            {initials || team.shortCode}
           </div>
         )}
       </div>

@@ -32,6 +32,7 @@ export async function upsertTeam(input: TeamInput) {
     id,
     name: input.name.trim(),
     caption,
+    captionPhotoUrl: input.captionPhotoUrl?.trim() || null,
     shortCode: input.shortCode.trim().toUpperCase(),
     logoUrl: input.logoUrl?.trim() || null,
     colorHex: input.colorHex.trim() || "#1e3a8a",

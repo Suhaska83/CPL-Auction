@@ -4,7 +4,7 @@ import { uploadImage } from "@/lib/upload";
 interface Props {
   value: string | null | undefined;
   onChange: (url: string | null) => void;
-  folder: "logos" | "players" | "misc";
+  folder: "logos" | "players" | "captions" | "misc";
   label?: string;
   aspect?: "square" | "landscape";
 }

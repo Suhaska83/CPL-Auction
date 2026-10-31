@@ -13,6 +13,8 @@ export interface Team {
   id: string;
   name: string;
   caption: string;
+  /** Optional portrait for squad list; else matched from player roster by caption name. */
+  captionPhotoUrl?: string | null;
   shortCode: string;
   logoUrl?: string | null;
   colorHex: string;

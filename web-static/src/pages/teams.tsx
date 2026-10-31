@@ -20,7 +20,7 @@ export function TeamsPage() {
           {stats.length} franchises · Squad size {tournament.squadSize}
         </div>
       </header>
-      <TeamsGrid teams={stats} />
+      <TeamsGrid teams={stats} players={players} />
     </section>
   );
 }
