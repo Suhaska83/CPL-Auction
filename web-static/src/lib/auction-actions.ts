@@ -9,11 +9,12 @@ import {
 } from "@/lib/auction-random";
 import { OPENING_BID } from "@/lib/constants";
 import { isEligibleForAuction } from "@/lib/auction-eligibility";
+import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type { Player, Team, AuctionState } from "@/types";
 
-function teamsRecordToList(raw: Record<string, Team> | null): Team[] {
+function teamsRecordToList(raw: Record<string, TeamLike> | null): Team[] {
   if (!raw) return [];
-  return Object.entries(raw).map(([id, t]) => ({ ...t, id }));
+  return Object.entries(raw).map(([id, t]) => normalizeTeam(id, t));
 }
 
 function playersRecordToList(raw: Record<string, Player> | null): Player[] {

@@ -1,7 +1,7 @@
 import type { Player, Team } from "@/types";
 
-function norm(s: string): string {
-  return s.trim().toLowerCase();
+function norm(s: string | null | undefined): string {
+  return (s ?? "").trim().toLowerCase();
 }
 
 /** Player name matches a franchise caption (caption is on squad, not auctioned). */

@@ -30,6 +30,6 @@ export function resolveCaptionPhotoUrl(team: Team, players: Player[]): string | 
   return findPlayerForCaption(team, players)?.photoUrl?.trim() ?? null;
 }
 
-function norm(s: string): string {
-  return s.trim().toLowerCase();
+function norm(s: string | null | undefined): string {
+  return (s ?? "").trim().toLowerCase();
 }
