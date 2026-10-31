@@ -1,8 +1,18 @@
 import { get, ref, remove, set, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
 import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
+import { formatFirebaseWriteError } from "@/lib/firebase-errors";
 import { type TeamLike } from "@/lib/team-utils";
 import type { Player, Team } from "@/types";
+
+/** RTDB payload: caption + legacy owner alias so older published rules still accept writes. */
+function teamRtdbPayload(team: Team, caption: string): Record<string, unknown> {
+  return {
+    ...team,
+    caption,
+    owner: caption
+  };
+}
 
 // ─── Slugify helper for stable IDs ────────────────────────────────
 function slugify(input: string): string {
@@ -44,7 +54,11 @@ export async function upsertTeam(input: TeamInput) {
       ? (existing.val() as Team).createdAt ?? Date.now()
       : input.createdAt ?? Date.now()
   };
-  await set(ref(db, `teams/${id}`), team);
+  try {
+    await set(ref(db, `teams/${id}`), teamRtdbPayload(team, caption));
+  } catch (e) {
+    throw new Error(formatFirebaseWriteError(e, "Could not save team"));
+  }
   return team;
 }
 

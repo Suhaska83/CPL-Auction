@@ -97,7 +97,9 @@ export function ManageTeams({ teams }: { teams: Team[] }) {
       </div>
 
       {err && (
-        <div className="card border-red-700/50 bg-red-900/30 p-3 text-sm text-red-300">{err}</div>
+        <div className="card whitespace-pre-wrap border-red-700/50 bg-red-900/30 p-3 text-sm text-red-300">
+          {err}
+        </div>
       )}
       {info && (
         <div className="card border-green-700/50 bg-green-900/30 p-3 text-sm text-green-300">
