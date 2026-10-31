@@ -16,12 +16,7 @@ interface Props {
 }
 
 /**
- * Shown immediately after a player is marked SOLD. Pre-fills two WhatsApp
- * messages (one to the player, one to the team captain) that the admin can
- * tweak and then open in WhatsApp Web / app with a single click.
- *
- * This uses the free `wa.me` click-to-chat URL — no backend, no API keys,
- * works for any phone number worldwide.
+ * Shown after a player is marked SOLD. Pre-fills a WhatsApp message to the player.
  */
 export function WhatsAppNotify({
   tournament,
@@ -31,38 +26,21 @@ export function WhatsAppNotify({
   onDismiss
 }: Props) {
   const playerPhone = useMemo(() => normaliseWhatsAppNumber(player.phone), [player.phone]);
-  const captainPhone = useMemo(
-    () => normaliseWhatsAppNumber(team.captainPhone),
-    [team.captainPhone]
-  );
 
   const priceStr = `₹${formatINR(soldPrice)}`;
   const defaultPlayerMsg =
     `Hi ${player.name}! 🎉\n\n` +
     `Congratulations — you've been picked up by *${team.name}* ` +
     `for ${priceStr} in the ${tournament.name} auction.\n\n` +
-    (team.captainName ? `Your captain is ${team.captainName}` : `Welcome to the squad`) +
-    (team.captainPhone ? ` (${formatPhoneDisplay(team.captainPhone)}).` : `.`) +
-    `\n\nBest of luck for the season! 🏏`;
-
-  const defaultCaptainMsg =
-    `Hi ${team.captainName || "Captain"}! 🏏\n\n` +
-    `Your team *${team.name}* has acquired *${player.name}* ` +
-    `(#${player.number}, ${player.skill}) for ${priceStr} ` +
-    `in the ${tournament.name} auction.\n\n` +
-    (player.phone
-      ? `Player's contact: ${formatPhoneDisplay(player.phone)}\n\n`
-      : "") +
-    `Welcome them to the squad!`;
+    `Welcome to the squad! Best of luck for the season! 🏏`;
 
   const [playerMsg, setPlayerMsg] = useState(defaultPlayerMsg);
-  const [captainMsg, setCaptainMsg] = useState(defaultCaptainMsg);
 
   return (
     <div className="card border-green-700/60 bg-green-900/15 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="font-display text-lg font-bold uppercase text-green-300">
-          📣 Notify on WhatsApp
+          📣 Notify player on WhatsApp
         </div>
         <div className="text-xs text-white/60">
           {player.name} → {team.name} · {priceStr}
@@ -76,29 +54,19 @@ export function WhatsAppNotify({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <NotifyCard
-          title="Player"
-          name={player.name}
-          phoneRaw={player.phone}
-          phoneDigits={playerPhone}
-          message={playerMsg}
-          onChange={setPlayerMsg}
-        />
-        <NotifyCard
-          title="Captain"
-          name={team.captainName || "—"}
-          phoneRaw={team.captainPhone}
-          phoneDigits={captainPhone}
-          message={captainMsg}
-          onChange={setCaptainMsg}
-        />
-      </div>
+      <NotifyCard
+        title="Player"
+        name={player.name}
+        phoneRaw={player.phone}
+        phoneDigits={playerPhone}
+        message={playerMsg}
+        onChange={setPlayerMsg}
+      />
 
       <p className="mt-3 text-[11px] text-white/50">
         Clicking <b>Open WhatsApp</b> launches WhatsApp Web (or the app on mobile) with the
-        message pre-filled — just tap <b>Send</b>. Numbers without a country code are treated
-        as India (+91). Edit a message above to customise it before sending.
+        message pre-filled — just tap <b>Send</b>. Add the player&apos;s phone on{" "}
+        <b>Manage Players</b> if needed. Numbers without a country code use India (+91).
       </p>
     </div>
   );
@@ -147,7 +115,7 @@ function NotifyCard({
           </a>
         ) : (
           <span className="rounded bg-navy-800 px-2 py-1 text-[11px] text-white/50">
-            Add a phone number to enable WhatsApp
+            Add a phone number on Manage Players to enable WhatsApp
           </span>
         )}
         <button

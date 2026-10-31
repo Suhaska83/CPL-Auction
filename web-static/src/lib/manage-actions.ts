@@ -34,8 +34,8 @@ export async function upsertTeam(input: TeamInput) {
     colorHex: input.colorHex.trim() || "#1e3a8a",
     totalBudget: Math.max(0, Math.round(input.totalBudget)),
     reserveBalance: Math.max(0, Math.round(input.reserveBalance)),
-    captainName: input.captainName?.trim() || null,
-    captainPhone: input.captainPhone?.trim() || null,
+    captainName: null,
+    captainPhone: null,
     createdAt: existing.exists()
       ? (existing.val() as Team).createdAt ?? Date.now()
       : input.createdAt ?? Date.now()
@@ -189,11 +189,7 @@ export function parseTeamsCsv(text: string): TeamInput[] {
       reserveBalance:
         idxOf("reservebalance") >= 0 && cells[idxOf("reservebalance")]
           ? Number(cells[idxOf("reservebalance")])
-          : 0,
-      captainName:
-        idxOf("captainname") >= 0 ? cells[idxOf("captainname")] || null : null,
-      captainPhone:
-        idxOf("captainphone") >= 0 ? cells[idxOf("captainphone")] || null : null
+          : 0
     });
   }
   return out;
