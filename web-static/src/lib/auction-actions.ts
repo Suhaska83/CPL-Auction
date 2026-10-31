@@ -8,7 +8,13 @@ import {
   RANDOM_SPIN_MS
 } from "@/lib/auction-random";
 import { OPENING_BID } from "@/lib/constants";
+import { isEligibleForAuction } from "@/lib/auction-eligibility";
 import type { Player, Team, AuctionState } from "@/types";
+
+function teamsRecordToList(raw: Record<string, Team> | null): Team[] {
+  if (!raw) return [];
+  return Object.entries(raw).map(([id, t]) => ({ ...t, id }));
+}
 
 function playersRecordToList(raw: Record<string, Player> | null): Player[] {
   if (!raw) return [];
@@ -48,6 +54,15 @@ export async function startPlayer(playerId: string) {
   const player = psnap.val() as Player | null;
   if (!player) throw new Error("Player not found");
   if (player.status === "SOLD") throw new Error("Player already sold");
+  if (player.status === "UNSOLD") throw new Error("Player was marked UNSOLD and cannot be auctioned again.");
+  if (player.status !== "AVAILABLE") throw new Error("Player is not available for auction.");
+
+  const teamsSnap = await get(ref(db, "teams"));
+  const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
+  const fullPlayer = { ...player, id: playerId };
+  if (!isEligibleForAuction(fullPlayer, teams)) {
+    throw new Error("This player is not eligible for auction (caption or unavailable).");
+  }
 
   const stateSnap = await get(ref(db, "state"));
   const prev = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
@@ -73,8 +88,9 @@ export async function startPlayer(playerId: string) {
 /** Start the random scroll animation; admin finalizes → live bidding. */
 export async function beginRandomPick(): Promise<Player> {
   const { db } = getFirebase();
-  const [playersSnap, stateSnap] = await Promise.all([
+  const [playersSnap, teamsSnap, stateSnap] = await Promise.all([
     get(ref(db, "players")),
+    get(ref(db, "teams")),
     get(ref(db, "state"))
   ]);
   const state = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
@@ -86,10 +102,11 @@ export async function beginRandomPick(): Promise<Player> {
   }
 
   const players = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
-  const winner = pickRandomPlayer(players);
+  const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
+  const winner = pickRandomPlayer(players, teams);
   if (!winner) throw new Error("No AVAILABLE players left to pick.");
 
-  const eligible = eligibleForRandomPick(players);
+  const eligible = eligibleForRandomPick(players, teams);
   const now = Date.now();
   const sequence = buildSpinSequence(eligible, winner);
 
@@ -133,8 +150,9 @@ export async function cancelRandomPick() {
 /** Start the next AVAILABLE player (lowest number). */
 export async function startNextPlayer(): Promise<Player | null> {
   const { db } = getFirebase();
-  const [playersSnap, stateSnap] = await Promise.all([
+  const [playersSnap, teamsSnap, stateSnap] = await Promise.all([
     get(ref(db, "players")),
+    get(ref(db, "teams")),
     get(ref(db, "state"))
   ]);
   const state = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
@@ -145,7 +163,9 @@ export async function startNextPlayer(): Promise<Player | null> {
     throw new Error("Wait for the random pick to finish.");
   }
 
-  const next = pickNextEligiblePlayer(playersRecordToList(playersSnap.val() as Record<string, Player> | null));
+  const players = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
+  const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
+  const next = pickNextEligiblePlayer(players, teams);
   if (!next) return null;
 
   await startPlayer(next.id);

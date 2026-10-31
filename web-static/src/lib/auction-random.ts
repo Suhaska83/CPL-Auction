@@ -1,13 +1,14 @@
-import type { Player } from "@/types";
+import { eligibleForAuction } from "@/lib/auction-eligibility";
+import type { Player, Team } from "@/types";
 
 export const RANDOM_SPIN_MS = 5_500;
 
-export function eligibleForRandomPick(players: Player[]): Player[] {
-  return players.filter((p) => p.status === "AVAILABLE");
+export function eligibleForRandomPick(players: Player[], teams: Team[]): Player[] {
+  return eligibleForAuction(players, teams);
 }
 
-export function pickRandomPlayer(players: Player[]): Player | null {
-  const pool = eligibleForRandomPick(players);
+export function pickRandomPlayer(players: Player[], teams: Team[]): Player | null {
+  const pool = eligibleForRandomPick(players, teams);
   if (!pool.length) return null;
   return pool[Math.floor(Math.random() * pool.length)]!;
 }

@@ -160,7 +160,7 @@ export function AuctionLiveView({
           </div>
           <div className="min-w-0">
             <div className="font-display text-xl font-bold uppercase tracking-wide text-white sm:text-2xl">
-              {currentTeam ? `${currentTeam.name} (${currentTeam.caption})` : "Awaiting first bid"}
+              {currentTeam ? currentTeam.name : "Awaiting first bid"}
             </div>
             <div className="mt-2 flex items-center gap-2 font-display text-3xl font-extrabold text-gold-400 sm:text-4xl">
               <CoinIcon />

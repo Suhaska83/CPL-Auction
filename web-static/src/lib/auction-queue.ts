@@ -1,10 +1,9 @@
-import type { Player } from "@/types";
+import { eligibleForAuction } from "@/lib/auction-eligibility";
+import type { Player, Team } from "@/types";
 
-/** Next player in auction order (lowest number still AVAILABLE). */
-export function pickNextEligiblePlayer(players: Player[]): Player | null {
+/** Next player in auction order (lowest number still eligible). */
+export function pickNextEligiblePlayer(players: Player[], teams: Team[]): Player | null {
   return (
-    players
-      .filter((p) => p.status === "AVAILABLE")
-      .sort((a, b) => a.number - b.number)[0] ?? null
+    eligibleForAuction(players, teams).sort((a, b) => a.number - b.number)[0] ?? null
   );
 }
