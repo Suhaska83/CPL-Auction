@@ -41,7 +41,7 @@ export function AdminPage() {
     () => teamStats(teams, players, tournament.squadSize),
     [teams, players, tournament.squadSize]
   );
-  const counts = useMemo(() => playerCounts(players), [players]);
+  const counts = useMemo(() => playerCounts(players, teams), [players, teams]);
   const currentPlayer = state.currentPlayerId
     ? players.find((p) => p.id === state.currentPlayerId) ?? null
     : null;

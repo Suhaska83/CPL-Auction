@@ -5,7 +5,7 @@ import { playerCounts, usePlayers, useTeams } from "@/hooks/useLiveData";
 export function PlayersPage() {
   const { players } = usePlayers();
   const { teams } = useTeams();
-  const counts = useMemo(() => playerCounts(players), [players]);
+  const counts = useMemo(() => playerCounts(players, teams), [players, teams]);
 
   return (
     <section className="space-y-5">

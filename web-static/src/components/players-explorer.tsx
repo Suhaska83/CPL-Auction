@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { clsx } from "clsx";
+import { isTeamCaptionPlayer } from "@/lib/auction-eligibility";
 import { formatCompact } from "@/lib/format";
+import { safeLower } from "@/lib/safe-string";
 import type { Player, PlayerCounts, Team } from "@/types";
 
 type Filter = "ALL" | "AVAILABLE" | "SOLD" | "UNSOLD";
@@ -22,15 +24,16 @@ export function PlayersExplorer({
   );
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = safeLower(search);
     return players.filter((p) => {
       if (filter === "AVAILABLE") {
+        if (isTeamCaptionPlayer(p, teams)) return false;
         if (p.status !== "AVAILABLE" && p.status !== "ON_AUCTION") return false;
       } else if (filter !== "ALL" && p.status !== filter) return false;
-      if (q && !p.name.toLowerCase().includes(q)) return false;
+      if (q && !safeLower(p.name).includes(q)) return false;
       return true;
     });
-  }, [players, filter, search]);
+  }, [players, filter, search, teams]);
 
   return (
     <section className="space-y-5">

@@ -194,20 +194,25 @@ export async function beginAutoAuction(): Promise<Player | null> {
 // ─── Place a bid (custom amount only; opening bid ₹200) ─────────────
 export async function placeBid(teamId: string, customAmount: number) {
   const { db } = getFirebase();
-  const [stateSnap, teamSnap, playersSnap] = await Promise.all([
+  const [stateSnap, teamSnap, playersSnap, teamsSnap] = await Promise.all([
     get(ref(db, "state")),
     get(ref(db, `teams/${teamId}`)),
-    get(ref(db, "players"))
+    get(ref(db, "players")),
+    get(ref(db, "teams"))
   ]);
   const state = stateSnap.val() as AuctionState | null;
   const team = teamSnap.val() as Team | null;
   if (!state?.currentPlayerId) throw new Error("No active player on auction. Click \u201CStart\u201D on a player first.");
   if (!team) throw new Error("Team not found");
 
-  const player = (playersSnap.val() as Record<string, Player> | null)?.[
-    state.currentPlayerId
-  ];
-  if (!player) throw new Error("Active player missing");
+  const playerId = state.currentPlayerId;
+  const rawPlayer = (playersSnap.val() as Record<string, Player> | null)?.[playerId];
+  if (!rawPlayer) throw new Error("Active player missing");
+  const player = { ...rawPlayer, id: playerId };
+  const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
+  if (!isEligibleForAuction(player, teams)) {
+    throw new Error("This player is a team caption and cannot be bid on.");
+  }
 
   const owned = Object.values(
     (playersSnap.val() as Record<string, Player> | null) ?? {}
@@ -253,10 +258,23 @@ export async function placeBid(teamId: string, customAmount: number) {
 // ─── Award to current highest bidder ───────────────────────────────
 export async function markSold() {
   const { db } = getFirebase();
-  const stateSnap = await get(ref(db, "state"));
+  const [stateSnap, playersSnap, teamsSnap] = await Promise.all([
+    get(ref(db, "state")),
+    get(ref(db, "players")),
+    get(ref(db, "teams"))
+  ]);
   const state = stateSnap.val() as AuctionState | null;
   if (!state?.currentPlayerId) throw new Error("No active player");
   if (!state.currentTeamId) throw new Error("No bids to award");
+
+  const playerId = state.currentPlayerId;
+  const raw = (playersSnap.val() as Record<string, Player> | null)?.[playerId];
+  if (raw) {
+    const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
+    if (!isEligibleForAuction({ ...raw, id: playerId }, teams)) {
+      throw new Error("This player is a team caption and cannot be sold via auction.");
+    }
+  }
 
   const autoPick = state.autoPick === true;
 

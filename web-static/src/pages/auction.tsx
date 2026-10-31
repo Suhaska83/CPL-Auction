@@ -16,7 +16,7 @@ export function AuctionPage() {
   const { teams } = useTeams();
   const { state } = useAuctionState();
 
-  const counts = useMemo(() => playerCounts(players), [players]);
+  const counts = useMemo(() => playerCounts(players, teams), [players, teams]);
   const stats = useMemo(
     () => teamStats(teams, players, tournament.squadSize),
     [teams, players, tournament.squadSize]
