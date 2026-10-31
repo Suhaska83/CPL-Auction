@@ -2,6 +2,7 @@ import { get, ref, remove, set, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
 import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
 import { formatFirebaseWriteError } from "@/lib/firebase-errors";
+import { safeTrim } from "@/lib/safe-string";
 import { type TeamLike } from "@/lib/team-utils";
 import type { Player, Team } from "@/types";
 
@@ -15,10 +16,9 @@ function teamRtdbPayload(team: Team, caption: string): Record<string, unknown> {
 }
 
 // ─── Slugify helper for stable IDs ────────────────────────────────
-function slugify(input: string): string {
-  return input
+function slugify(input: unknown): string {
+  return safeTrim(input)
     .toLowerCase()
-    .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
@@ -32,20 +32,20 @@ export type TeamInput = Omit<Team, "id" | "createdAt"> & {
 
 export async function upsertTeam(input: TeamInput) {
   const { db } = getFirebase();
-  const id = input.id?.trim() || slugify(input.name);
+  const id = safeTrim(input.id) || slugify(input.name);
   if (!id) throw new Error("Team must have a name.");
 
   const existing = await get(ref(db, `teams/${id}`));
-  const caption = (input.caption ?? (input as TeamLike).owner ?? "").trim();
+  const caption = safeTrim(input.caption ?? (input as TeamLike).owner);
   if (!caption) throw new Error("Team must have a caption.");
   const team: Team = {
     id,
-    name: input.name.trim(),
+    name: safeTrim(input.name),
     caption,
-    captionPhotoUrl: input.captionPhotoUrl?.trim() || null,
-    shortCode: input.shortCode.trim().toUpperCase(),
-    logoUrl: input.logoUrl?.trim() || null,
-    colorHex: input.colorHex.trim() || "#1e3a8a",
+    captionPhotoUrl: safeTrim(input.captionPhotoUrl) || null,
+    shortCode: safeTrim(input.shortCode).toUpperCase() || "TBD",
+    logoUrl: safeTrim(input.logoUrl) || null,
+    colorHex: safeTrim(input.colorHex) || "#1e3a8a",
     totalBudget: Math.max(0, Math.round(input.totalBudget)),
     reserveBalance: Math.max(0, Math.round(input.reserveBalance)),
     captainName: null,
@@ -82,22 +82,22 @@ export async function deleteTeam(teamId: string) {
 export type PlayerInput = Omit<Player, "id"> & { id?: string };
 
 function playerIdFor(number: number, existingId?: string): string {
-  return existingId?.trim() || `p${String(number).padStart(3, "0")}`;
+  return safeTrim(existingId) || `p${String(number).padStart(3, "0")}`;
 }
 
 export async function upsertPlayer(input: PlayerInput) {
   const { db } = getFirebase();
   const id = playerIdFor(input.number, input.id);
-  if (!id || !input.name.trim()) throw new Error("Number and name are required.");
+  if (!id || !safeTrim(input.name)) throw new Error("Number and name are required.");
 
   const player: Player = {
     id,
     number: Math.max(1, Math.round(input.number)),
-    name: input.name.trim(),
+    name: safeTrim(input.name),
     age: input.age ? Math.max(1, Math.round(input.age)) : null,
-    skill: input.skill.trim() || "Batsman",
-    photoUrl: input.photoUrl?.trim() || null,
-    phone: input.phone?.trim() || null,
+    skill: safeTrim(input.skill) || "Batsman",
+    photoUrl: safeTrim(input.photoUrl) || null,
+    phone: safeTrim(input.phone) || null,
     matches: Math.max(0, Math.round(input.matches ?? 0)),
     runs: Math.max(0, Math.round(input.runs ?? 0)),
     wickets: Math.max(0, Math.round(input.wickets ?? 0)),

@@ -1,4 +1,5 @@
 import { formatINR } from "@/lib/format";
+import { safeTrim } from "@/lib/safe-string";
 import type { Player, Team, TeamStats } from "@/types";
 
 /** One row: photo | name | sold amount (for live auction or team squad). */
@@ -47,7 +48,8 @@ export function CaptionSquadRow({
   team: Pick<TeamStats, "caption" | "name" | "shortCode" | "colorHex">;
   photoUrl?: string | null;
 }) {
-  const initials = team.caption
+  const captionLabel = safeTrim(team.caption);
+  const initials = captionLabel
     .split(/\s+/)
     .map((w) => w[0])
     .join("")
@@ -69,7 +71,7 @@ export function CaptionSquadRow({
         )}
       </div>
       <div className="min-w-0 flex-1 text-left">
-        <div className="truncate font-display text-lg font-bold text-white">{team.caption}</div>
+        <div className="truncate font-display text-lg font-bold text-white">{captionLabel}</div>
         <div className="text-xs font-semibold uppercase tracking-wider text-gold-400">Caption</div>
       </div>
       <div className="shrink-0 text-right">

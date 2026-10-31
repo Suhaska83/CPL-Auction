@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { getDatabase, type Database } from "firebase/database";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { safeTrim } from "@/lib/safe-string";
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
@@ -24,7 +25,8 @@ export const isFirebaseConfigured =
   !!config.apiKey && !!config.databaseURL && !!config.projectId;
 
 /** True when a Storage bucket is set in env (optional — uploads can use inline data URLs). */
-export const storageBucketConfigured = !!config.storageBucket?.trim();
+const storageBucket = safeTrim(config.storageBucket);
+export const storageBucketConfigured = !!storageBucket;
 
 let _app: FirebaseApp | null = null;
 let _db: Database | null = null;
@@ -36,7 +38,7 @@ function initIfNeeded() {
     _app = initializeApp(config);
     _db = getDatabase(_app);
     _storage = storageBucketConfigured
-      ? getStorage(_app, `gs://${config.storageBucket.trim()}`)
+      ? getStorage(_app, `gs://${storageBucket}`)
       : getStorage(_app);
   }
 }

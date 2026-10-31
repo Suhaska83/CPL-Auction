@@ -83,7 +83,14 @@ export function usePlayers(): { players: Player[]; loading: boolean } {
   );
   const players = useMemo(
     () =>
-      toArray<Player>(value ?? undefined).sort((a, b) => a.number - b.number),
+      toArray<Player>(value ?? undefined)
+        .map((p) => ({
+          ...p,
+          name: safeTrim(p.name),
+          skill: safeTrim(p.skill) || "Batsman",
+          status: p.status ?? "AVAILABLE"
+        }))
+        .sort((a, b) => a.number - b.number),
     [value]
   );
   return { players, loading };

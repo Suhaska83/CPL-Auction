@@ -8,6 +8,7 @@ import {
   upsertPlayer,
   type PlayerInput
 } from "@/lib/manage-actions";
+import { safeLower } from "@/lib/safe-string";
 import { ImageUpload } from "@/components/image-upload";
 import type { Player, Team } from "@/types";
 
@@ -52,13 +53,13 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
   );
 
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
+    const s = safeLower(q);
     if (!s) return players;
     return players.filter(
       (p) =>
-        p.name.toLowerCase().includes(s) ||
+        safeLower(p.name).includes(s) ||
         String(p.number).includes(s) ||
-        p.skill.toLowerCase().includes(s)
+        safeLower(p.skill).includes(s)
     );
   }, [players, q]);
 
