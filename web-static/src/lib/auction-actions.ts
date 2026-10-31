@@ -7,6 +7,7 @@ import {
   pickRandomPlayer,
   RANDOM_SPIN_MS
 } from "@/lib/auction-random";
+import { OPENING_BID } from "@/lib/constants";
 import type { Player, Team, AuctionState } from "@/types";
 
 function playersRecordToList(raw: Record<string, Player> | null): Player[] {
@@ -25,7 +26,18 @@ function clearedState(autoPick = false): AuctionState {
     spinStartedAt: null,
     spinEndsAt: null,
     spinTargetPlayerId: null,
-    spinSequence: null
+    spinSequence: null,
+    lastSoldPlayerId: null,
+    lastSoldTeamId: null,
+    lastSoldPrice: null
+  };
+}
+
+function preserveLastSold(state: AuctionState | null) {
+  return {
+    lastSoldPlayerId: state?.lastSoldPlayerId ?? null,
+    lastSoldTeamId: state?.lastSoldTeamId ?? null,
+    lastSoldPrice: state?.lastSoldPrice ?? null
   };
 }
 
@@ -44,7 +56,7 @@ export async function startPlayer(playerId: string) {
     [`players/${playerId}/status`]: "ON_AUCTION",
     state: {
       currentPlayerId: playerId,
-      currentBid: player.basePrice,
+      currentBid: 0,
       currentTeamId: null,
       isRunning: true,
       autoPick: prev.autoPick === true,
@@ -52,7 +64,8 @@ export async function startPlayer(playerId: string) {
       spinStartedAt: null,
       spinEndsAt: null,
       spinTargetPlayerId: null,
-      spinSequence: null
+      spinSequence: null,
+      ...preserveLastSold(prev)
     } satisfies AuctionState
   });
 }
@@ -83,6 +96,7 @@ export async function beginRandomPick(): Promise<Player> {
   await update(ref(db), {
     state: {
       ...clearedState(state.autoPick === true),
+      ...preserveLastSold(state),
       pickPhase: "spinning",
       spinStartedAt: now,
       spinEndsAt: now + RANDOM_SPIN_MS,
@@ -150,15 +164,8 @@ export async function beginAutoAuction(): Promise<Player | null> {
   return startNextPlayer();
 }
 
-// ─── Place a bid ───────────────────────────────────────────────────
-// If `customAmount` is provided, that exact rupee value is used.
-// Otherwise bumps the current bid by `tournamentIncrement` (or to the
-// player's base price if no bids have been placed yet).
-export async function placeBid(
-  teamId: string,
-  tournamentIncrement: number,
-  customAmount?: number
-) {
+// ─── Place a bid (custom amount only; opening bid ₹200) ─────────────
+export async function placeBid(teamId: string, customAmount: number) {
   const { db } = getFirebase();
   const [stateSnap, teamSnap, playersSnap] = await Promise.all([
     get(ref(db, "state")),
@@ -182,21 +189,18 @@ export async function placeBid(
   const balance = team.totalBudget - spent;
   const maxBid = Math.max(0, balance - team.reserveBalance);
 
-  const nextAmount =
-    typeof customAmount === "number" && Number.isFinite(customAmount) && customAmount > 0
-      ? Math.round(customAmount)
-      : state.currentBid > 0
-        ? state.currentBid + tournamentIncrement
-        : player.basePrice;
-
-  if (nextAmount < player.basePrice) {
-    throw new Error(
-      `Bid (${nextAmount}) must be at least the base price (${player.basePrice}).`
-    );
+  if (!Number.isFinite(customAmount) || customAmount <= 0) {
+    throw new Error("Enter a custom bid amount.");
   }
-  if (state.currentBid > 0 && nextAmount <= state.currentBid) {
+  const nextAmount = Math.round(customAmount);
+
+  if (nextAmount < OPENING_BID) {
+    throw new Error(`Bid must be at least the opening bid (₹${OPENING_BID}).`);
+  }
+  const highBid = state.currentTeamId ? state.currentBid : 0;
+  if (highBid > 0 && nextAmount <= highBid) {
     throw new Error(
-      `Bid (${nextAmount}) must be greater than the current bid (${state.currentBid}).`
+      `Bid (₹${nextAmount}) must be greater than the current high bid (₹${highBid}).`
     );
   }
   if (nextAmount > maxBid) {
@@ -233,9 +237,13 @@ export async function markSold() {
     [`players/${state.currentPlayerId}/status`]: "SOLD",
     [`players/${state.currentPlayerId}/teamId`]: state.currentTeamId,
     [`players/${state.currentPlayerId}/soldPrice`]: state.currentBid,
-    state: clearedState(autoPick)
+    state: {
+      ...clearedState(autoPick),
+      lastSoldPlayerId: state.currentPlayerId,
+      lastSoldTeamId: state.currentTeamId,
+      lastSoldPrice: state.currentBid
+    }
   });
-
 }
 
 // ─── Mark current as UNSOLD ────────────────────────────────────────
@@ -251,9 +259,8 @@ export async function markUnsold() {
     [`players/${state.currentPlayerId}/status`]: "UNSOLD",
     [`players/${state.currentPlayerId}/teamId`]: null,
     [`players/${state.currentPlayerId}/soldPrice`]: null,
-    state: clearedState(autoPick)
+    state: { ...clearedState(autoPick), ...preserveLastSold(state) }
   });
-
 }
 
 // ─── Reset live state (does not touch sold history unless fullReset) ─

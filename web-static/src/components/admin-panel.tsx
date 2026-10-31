@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { OPENING_BID } from "@/lib/constants";
 import { formatCompact, formatINR } from "@/lib/format";
 import {
   beginRandomPick,
@@ -287,7 +288,15 @@ export function AdminPanel({
               <div className="mt-1 text-sm">
                 Current bid:{" "}
                 <span className="font-bold text-gold-400">
-                  ₹ {formatINR(state.currentBid || currentPlayer.basePrice)}
+                  ₹{" "}
+                  {formatINR(
+                    state.currentTeamId && state.currentBid > 0
+                      ? state.currentBid
+                      : OPENING_BID
+                  )}
+                  {!state.currentTeamId && (
+                    <span className="text-white/50"> (opening)</span>
+                  )}
                 </span>{" "}
                 {state.currentTeamId ? (
                   <span className="text-white/70">
@@ -350,10 +359,10 @@ export function AdminPanel({
       <div className="card p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="font-display text-xl font-bold uppercase text-gold-400">
-            Teams — type a bid or use quick buttons
+            Teams — custom bid (₹{formatINR(OPENING_BID)} opening)
           </div>
           <div className="text-xs text-white/50">
-            Default step +{formatCompact(tournament.bidIncrement)}
+            Type the amount for the team that is bidding, then click Bid.
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-2">
@@ -363,13 +372,12 @@ export function AdminPanel({
               team={t}
               busy={busy}
               currentBid={state.currentBid}
-              basePrice={currentPlayer?.basePrice ?? 0}
-              bidIncrement={tournament.bidIncrement}
+              hasBid={!!state.currentTeamId}
               hasPlayer={!!state.currentPlayerId}
               isHighest={state.currentTeamId === t.id}
               onBid={(amount) =>
                 run(
-                  () => placeBid(t.id, tournament.bidIncrement, amount),
+                  () => placeBid(t.id, amount),
                   `💰 ${t.name} bid ₹${formatINR(amount)}.`
                 )
               }
@@ -418,8 +426,7 @@ function TeamBidCard({
   team,
   busy,
   currentBid,
-  basePrice,
-  bidIncrement,
+  hasBid,
   hasPlayer,
   isHighest,
   onBid
@@ -427,26 +434,23 @@ function TeamBidCard({
   team: TeamStats;
   busy: boolean;
   currentBid: number;
-  basePrice: number;
-  bidIncrement: number;
+  hasBid: boolean;
   hasPlayer: boolean;
   isHighest: boolean;
   onBid: (amount: number) => void;
 }) {
-  // Default suggested bid = next step above current, or base price if first bid.
-  const suggested = currentBid > 0 ? currentBid + bidIncrement : basePrice;
-  const [amount, setAmount] = useState<number>(suggested);
+  const suggested = hasBid && currentBid > 0 ? currentBid + 1 : OPENING_BID;
+  const [amount, setAmount] = useState<number>(OPENING_BID);
 
-  // Keep the input in sync when the live state changes (new player, new bid, etc.)
   useEffect(() => {
     setAmount(suggested);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentBid, basePrice, bidIncrement]);
+  }, [currentBid, hasBid, hasPlayer]);
 
   const disabled = busy || !hasPlayer;
 
   function submit() {
-    if (!amount || amount <= 0) return;
+    if (!amount || amount < OPENING_BID) return;
     onBid(amount);
   }
 
@@ -510,8 +514,8 @@ function TeamBidCard({
             </span>
             <input
               type="number"
-              min={0}
-              step={100}
+              min={OPENING_BID}
+              step={1}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
               onKeyDown={(e) => {
@@ -519,13 +523,13 @@ function TeamBidCard({
               }}
               disabled={disabled}
               className="input pl-6"
-              placeholder="Enter amount"
+              placeholder={`Min ₹${OPENING_BID}`}
             />
           </div>
           <button
             type="button"
             className="btn-primary"
-            disabled={disabled || !amount || amount <= 0}
+            disabled={disabled || !amount || amount < OPENING_BID || exceedsMax}
             onClick={submit}
           >
             Bid

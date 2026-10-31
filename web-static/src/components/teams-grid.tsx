@@ -1,4 +1,5 @@
-import { formatCompact, formatINR } from "@/lib/format";
+import { SoldPlayerRow } from "@/components/sold-player-row";
+import { formatCompact } from "@/lib/format";
 import type { TeamStats } from "@/types";
 
 export function TeamsGrid({ teams }: { teams: TeamStats[] }) {
@@ -41,16 +42,14 @@ export function TeamsGrid({ teams }: { teams: TeamStats[] }) {
               <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/60">
                 Purchased Players ({t.players.length})
               </div>
-              <ul className="flex flex-wrap gap-2">
+              <ul className="flex flex-col gap-2">
                 {t.players.map((p) => (
-                  <li
-                    key={p.id}
-                    className="rounded-md bg-panel px-2 py-1 text-xs text-white/80 ring-1 ring-panel-border"
-                  >
-                    <span className="font-semibold text-white">{p.name}</span>
-                    {p.soldPrice != null && p.soldPrice > 0 ? (
-                      <span className="text-gold-400"> · ₹{formatINR(p.soldPrice)}</span>
-                    ) : null}
+                  <li key={p.id}>
+                    <SoldPlayerRow
+                      player={p}
+                      soldPrice={p.soldPrice ?? 0}
+                      teamName={null}
+                    />
                   </li>
                 ))}
               </ul>

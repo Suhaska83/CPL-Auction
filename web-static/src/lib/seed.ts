@@ -150,7 +150,10 @@ export async function seedIfEmpty(): Promise<{ seeded: boolean; message: string 
       spinStartedAt: null,
       spinEndsAt: null,
       spinTargetPlayerId: null,
-      spinSequence: null
+      spinSequence: null,
+      lastSoldPlayerId: null,
+      lastSoldTeamId: null,
+      lastSoldPrice: null
     },
     bids: null
   });

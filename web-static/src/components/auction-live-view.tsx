@@ -1,9 +1,12 @@
 import { RandomPickSpinner } from "@/components/random-pick-spinner";
+import { resolveTeamName, SoldPlayerRow } from "@/components/sold-player-row";
+import { OPENING_BID } from "@/lib/constants";
 import { formatINR } from "@/lib/format";
-import type { AuctionState, Player, PlayerCounts, TeamStats } from "@/types";
+import type { AuctionState, Player, PlayerCounts, Team, TeamStats } from "@/types";
 
 interface Props {
   players: Player[];
+  teams: Team[];
   state: AuctionState;
   currentPlayer: Player | null;
   currentTeam: TeamStats | null;
@@ -14,6 +17,7 @@ interface Props {
 
 export function AuctionLiveView({
   players,
+  teams,
   state,
   currentPlayer,
   currentTeam,
@@ -21,6 +25,23 @@ export function AuctionLiveView({
   isRunning,
   counts
 }: Props) {
+  const lastSoldPlayer = state.lastSoldPlayerId
+    ? players.find((p) => p.id === state.lastSoldPlayerId) ?? null
+    : null;
+  const lastSoldBanner =
+    lastSoldPlayer && state.lastSoldPrice != null && state.lastSoldPrice > 0 ? (
+      <div className="mb-4">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-green-300/90">
+          Last sold
+        </div>
+        <SoldPlayerRow
+          player={lastSoldPlayer}
+          soldPrice={state.lastSoldPrice}
+          teamName={resolveTeamName(teams, state.lastSoldTeamId)}
+        />
+      </div>
+    ) : null;
+
   const spinning =
     state.pickPhase === "spinning" &&
     state.spinSequence?.length &&
@@ -31,6 +52,7 @@ export function AuctionLiveView({
   if (spinning) {
     return (
       <div className="space-y-4">
+        {lastSoldBanner}
         <RandomPickSpinner
           players={players}
           sequence={state.spinSequence!}
@@ -49,7 +71,9 @@ export function AuctionLiveView({
 
   if (!currentPlayer) {
     return (
-      <div className="card grid min-h-[380px] place-items-center p-10 text-center">
+      <div className="space-y-4">
+        {lastSoldBanner}
+        <div className="card grid min-h-[380px] place-items-center p-10 text-center">
         <div>
           <div className="text-sm uppercase tracking-widest text-white/50">Auction status</div>
           <div className="mt-2 font-display text-3xl font-bold text-gold-400">
@@ -65,13 +89,18 @@ export function AuctionLiveView({
             <MiniStat label="Available" value={counts.available} tone="neutral" />
           </div>
         </div>
+        </div>
       </div>
     );
   }
 
-  const bidAmount = currentBid > 0 ? currentBid : currentPlayer.basePrice;
+  const bidAmount =
+    currentTeam && currentBid > 0 ? currentBid : currentBid > 0 ? currentBid : OPENING_BID;
+  const showingOpening = !currentTeam;
 
   return (
+    <div className="space-y-4">
+      {lastSoldBanner}
     <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
       {/* Player card */}
       <div className="animate-slide-in card overflow-hidden p-5 sm:p-6">
@@ -131,12 +160,17 @@ export function AuctionLiveView({
           </div>
           <div className="min-w-0">
             <div className="font-display text-xl font-bold uppercase tracking-wide text-white sm:text-2xl">
-              {currentTeam ? `${currentTeam.name} (${currentTeam.owner})` : "Awaiting bid"}
+              {currentTeam ? `${currentTeam.name} (${currentTeam.owner})` : "Awaiting first bid"}
             </div>
             <div className="mt-2 flex items-center gap-2 font-display text-3xl font-extrabold text-gold-400 sm:text-4xl">
               <CoinIcon />
               {formatINR(bidAmount)}
             </div>
+            {showingOpening && (
+              <div className="mt-1 text-xs text-white/50">
+                Opening bid ₹{formatINR(OPENING_BID)} — enter custom amount in admin
+              </div>
+            )}
           </div>
         </div>
 
@@ -167,6 +201,7 @@ export function AuctionLiveView({
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

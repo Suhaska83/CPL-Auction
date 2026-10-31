@@ -53,6 +53,9 @@ export interface AuctionState {
   spinEndsAt?: number | null;
   spinTargetPlayerId?: string | null;
   spinSequence?: string[] | null;
+  lastSoldPlayerId?: string | null;
+  lastSoldTeamId?: string | null;
+  lastSoldPrice?: number | null;
 }
 
 export interface TeamStats extends Team {

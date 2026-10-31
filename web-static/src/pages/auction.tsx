@@ -36,6 +36,7 @@ export function AuctionPage() {
       </header>
       <AuctionLiveView
         players={players}
+        teams={teams}
         state={state}
         currentPlayer={currentPlayer}
         currentTeam={currentTeam}
