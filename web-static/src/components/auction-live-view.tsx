@@ -1,47 +1,64 @@
+import { RandomPickSpinner } from "@/components/random-pick-spinner";
 import { formatINR } from "@/lib/format";
-import type { Player, PlayerCounts, TeamStats } from "@/types";
+import type { AuctionState, Player, PlayerCounts, TeamStats } from "@/types";
 
 interface Props {
+  players: Player[];
+  state: AuctionState;
   currentPlayer: Player | null;
   currentTeam: TeamStats | null;
   currentBid: number;
   isRunning: boolean;
   counts: PlayerCounts;
-  autoPick?: boolean;
-  nextUp?: Player | null;
 }
 
 export function AuctionLiveView({
+  players,
+  state,
   currentPlayer,
   currentTeam,
   currentBid,
   isRunning,
-  counts,
-  autoPick = false,
-  nextUp = null
+  counts
 }: Props) {
+  const spinning =
+    state.pickPhase === "spinning" &&
+    state.spinSequence?.length &&
+    state.spinStartedAt &&
+    state.spinEndsAt &&
+    state.spinTargetPlayerId;
+
+  if (spinning) {
+    return (
+      <div className="space-y-4">
+        <RandomPickSpinner
+          players={players}
+          sequence={state.spinSequence!}
+          spinStartedAt={state.spinStartedAt!}
+          spinEndsAt={state.spinEndsAt!}
+          targetPlayerId={state.spinTargetPlayerId!}
+        />
+        <div className="grid grid-cols-3 gap-3">
+          <MiniStat label="Sold" value={counts.sold} tone="success" />
+          <MiniStat label="Unsold" value={counts.unsold} tone="danger" />
+          <MiniStat label="Available" value={counts.available} tone="neutral" />
+        </div>
+      </div>
+    );
+  }
+
   if (!currentPlayer) {
     return (
       <div className="card grid min-h-[380px] place-items-center p-10 text-center">
         <div>
           <div className="text-sm uppercase tracking-widest text-white/50">Auction status</div>
           <div className="mt-2 font-display text-3xl font-bold text-gold-400">
-            {autoPick && nextUp ? "Loading next player…" : "Waiting for next player…"}
+            Ready to start
           </div>
           <p className="mt-3 max-w-lg text-white/60">
-            {autoPick
-              ? "Auto auction is on — the next available player appears here automatically after each SOLD or UNSOLD."
-              : "The auctioneer hasn't picked a player yet. The screen will update live the moment bidding starts."}
+            The admin will start the auction — a random player reel runs on this screen, then
+            bidding opens for the selected player.
           </p>
-          {nextUp && (
-            <div className="mt-4 rounded-md border border-gold-500/40 bg-gold-500/10 px-4 py-3">
-              <div className="text-xs uppercase tracking-wider text-gold-300/80">Up next</div>
-              <div className="font-display text-xl font-bold text-white">
-                #{nextUp.number} {nextUp.name}
-              </div>
-              <div className="text-sm text-white/60">{nextUp.skill}</div>
-            </div>
-          )}
           <div className="mt-6 grid grid-cols-3 gap-3">
             <MiniStat label="Sold" value={counts.sold} tone="success" />
             <MiniStat label="Unsold" value={counts.unsold} tone="danger" />

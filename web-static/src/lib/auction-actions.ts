@@ -1,6 +1,12 @@
 import { ref, get, set, update, push } from "firebase/database";
 import { getFirebase } from "@/firebase";
 import { pickNextEligiblePlayer } from "@/lib/auction-queue";
+import {
+  buildSpinSequence,
+  eligibleForRandomPick,
+  pickRandomPlayer,
+  RANDOM_SPIN_MS
+} from "@/lib/auction-random";
 import type { Player, Team, AuctionState } from "@/types";
 
 function playersRecordToList(raw: Record<string, Player> | null): Player[] {
@@ -8,13 +14,18 @@ function playersRecordToList(raw: Record<string, Player> | null): Player[] {
   return Object.entries(raw).map(([id, p]) => ({ ...p, id }));
 }
 
-function clearedState(autoPick: boolean): AuctionState {
+function clearedState(autoPick = false): AuctionState {
   return {
     currentPlayerId: null,
     currentBid: 0,
     currentTeamId: null,
     isRunning: false,
-    autoPick
+    autoPick,
+    pickPhase: "idle",
+    spinStartedAt: null,
+    spinEndsAt: null,
+    spinTargetPlayerId: null,
+    spinSequence: null
   };
 }
 
@@ -36,9 +47,73 @@ export async function startPlayer(playerId: string) {
       currentBid: player.basePrice,
       currentTeamId: null,
       isRunning: true,
-      autoPick: prev.autoPick === true
+      autoPick: prev.autoPick === true,
+      pickPhase: "idle",
+      spinStartedAt: null,
+      spinEndsAt: null,
+      spinTargetPlayerId: null,
+      spinSequence: null
     } satisfies AuctionState
   });
+}
+
+/** Start the random scroll animation; admin finalizes → live bidding. */
+export async function beginRandomPick(): Promise<Player> {
+  const { db } = getFirebase();
+  const [playersSnap, stateSnap] = await Promise.all([
+    get(ref(db, "players")),
+    get(ref(db, "state"))
+  ]);
+  const state = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
+  if (state.currentPlayerId) {
+    throw new Error("Mark the current player SOLD or UNSOLD before picking again.");
+  }
+  if (state.pickPhase === "spinning") {
+    throw new Error("Random pick already running.");
+  }
+
+  const players = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
+  const winner = pickRandomPlayer(players);
+  if (!winner) throw new Error("No AVAILABLE players left to pick.");
+
+  const eligible = eligibleForRandomPick(players);
+  const now = Date.now();
+  const sequence = buildSpinSequence(eligible, winner);
+
+  await update(ref(db), {
+    state: {
+      ...clearedState(state.autoPick === true),
+      pickPhase: "spinning",
+      spinStartedAt: now,
+      spinEndsAt: now + RANDOM_SPIN_MS,
+      spinTargetPlayerId: winner.id,
+      spinSequence: sequence
+    } satisfies AuctionState
+  });
+
+  return winner;
+}
+
+/** After the reel animation — put the selected player on auction. */
+export async function finalizeRandomPick(): Promise<Player | null> {
+  const { db } = getFirebase();
+  const stateSnap = await get(ref(db, "state"));
+  const state = stateSnap.val() as AuctionState | null;
+  if (state?.pickPhase !== "spinning" || !state.spinTargetPlayerId) return null;
+
+  const id = state.spinTargetPlayerId;
+  await startPlayer(id);
+  const psnap = await get(ref(db, `players/${id}`));
+  const player = psnap.val() as Player | null;
+  return player ? { ...player, id } : null;
+}
+
+export async function cancelRandomPick() {
+  const { db } = getFirebase();
+  const stateSnap = await get(ref(db, "state"));
+  const state = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
+  if (state.pickPhase !== "spinning") return;
+  await update(ref(db), { state: clearedState(state.autoPick === true) });
 }
 
 /** Start the next AVAILABLE player (lowest number). */
@@ -51,6 +126,9 @@ export async function startNextPlayer(): Promise<Player | null> {
   const state = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
   if (state.currentPlayerId) {
     throw new Error("A player is already on auction. Mark SOLD/UNSOLD or pause first.");
+  }
+  if (state.pickPhase === "spinning") {
+    throw new Error("Wait for the random pick to finish.");
   }
 
   const next = pickNextEligiblePlayer(playersRecordToList(playersSnap.val() as Record<string, Player> | null));
@@ -70,13 +148,6 @@ export async function beginAutoAuction(): Promise<Player | null> {
   const { db } = getFirebase();
   await update(ref(db), { "state/autoPick": true });
   return startNextPlayer();
-}
-
-async function maybeAutoAdvance(autoPick: boolean) {
-  if (!autoPick) return null;
-  const next = await startNextPlayer();
-  if (!next) await setAutoPick(false);
-  return next;
 }
 
 // ─── Place a bid ───────────────────────────────────────────────────
@@ -165,7 +236,6 @@ export async function markSold() {
     state: clearedState(autoPick)
   });
 
-  await maybeAutoAdvance(autoPick);
 }
 
 // ─── Mark current as UNSOLD ────────────────────────────────────────
@@ -184,7 +254,6 @@ export async function markUnsold() {
     state: clearedState(autoPick)
   });
 
-  await maybeAutoAdvance(autoPick);
 }
 
 // ─── Reset live state (does not touch sold history unless fullReset) ─

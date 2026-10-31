@@ -46,8 +46,13 @@ export interface AuctionState {
   currentBid: number;
   currentTeamId: string | null;
   isRunning: boolean;
-  /** When true, the next AVAILABLE player is started automatically after SOLD/UNSOLD. */
+  /** @deprecated Sequential auto-pick; prefer random pick controls in admin. */
   autoPick?: boolean;
+  pickPhase?: "idle" | "spinning";
+  spinStartedAt?: number | null;
+  spinEndsAt?: number | null;
+  spinTargetPlayerId?: string | null;
+  spinSequence?: string[] | null;
 }
 
 export interface TeamStats extends Team {

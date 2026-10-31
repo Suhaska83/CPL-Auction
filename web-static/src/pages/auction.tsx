@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { AuctionLiveView } from "@/components/auction-live-view";
-import { pickNextEligiblePlayer } from "@/lib/auction-queue";
 import {
   playerCounts,
   teamStats,
@@ -27,7 +26,6 @@ export function AuctionPage() {
   const currentTeam = state.currentTeamId
     ? stats.find((t) => t.id === state.currentTeamId) ?? null
     : null;
-  const nextUp = useMemo(() => pickNextEligiblePlayer(players), [players]);
 
   return (
     <section className="space-y-4">
@@ -37,13 +35,13 @@ export function AuctionPage() {
         </h1>
       </header>
       <AuctionLiveView
+        players={players}
+        state={state}
         currentPlayer={currentPlayer}
         currentTeam={currentTeam}
         currentBid={state.currentBid}
         isRunning={state.isRunning}
         counts={counts}
-        autoPick={state.autoPick === true}
-        nextUp={nextUp}
       />
     </section>
   );

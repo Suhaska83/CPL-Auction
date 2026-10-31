@@ -1,16 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatCompact, formatINR } from "@/lib/format";
 import {
-  beginAutoAuction,
+  beginRandomPick,
+  cancelRandomPick,
+  finalizeRandomPick,
   markSold,
   markUnsold,
   placeBid,
   resetLive,
-  setAutoPick,
-  startNextPlayer,
   startPlayer
 } from "@/lib/auction-actions";
-import { pickNextEligiblePlayer } from "@/lib/auction-queue";
 import { applyCplLiveSettings } from "@/lib/manage-actions";
 import { forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
@@ -66,8 +65,28 @@ export function AdminPanel({
   }
 
   const eligible = players.filter((p) => p.status === "AVAILABLE");
-  const nextUp = pickNextEligiblePlayer(players);
-  const autoPickOn = state.autoPick === true;
+  const isSpinning = state.pickPhase === "spinning";
+  const canStartRandom =
+    eligible.length > 0 && !state.currentPlayerId && !isSpinning;
+  const finalizedSpin = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isSpinning || !state.spinEndsAt || !state.spinStartedAt) return;
+    if (finalizedSpin.current === state.spinStartedAt) return;
+
+    const wait = state.spinEndsAt - Date.now();
+    const timer = window.setTimeout(() => {
+      finalizedSpin.current = state.spinStartedAt!;
+      run(async () => {
+        const p = await finalizeRandomPick();
+        if (!p) throw new Error("Could not open bidding for the selected player.");
+        setInfo(`🎯 #${p.number} ${p.name} selected — bidding is live.`);
+      });
+    }, Math.max(0, wait));
+
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSpinning, state.spinEndsAt, state.spinStartedAt]);
 
   return (
     <div className="space-y-6">
@@ -170,68 +189,69 @@ export function AdminPanel({
         </button>
       </div>
 
-      {/* Auto player queue */}
+      {/* Random player pick (live reel on Auction page) */}
       <div className="card flex flex-wrap items-center gap-3 p-4">
         <div className="mr-auto min-w-[200px]">
           <div className="font-display text-lg font-bold uppercase text-gold-400">
-            Auto pick players
+            Start auction
           </div>
           <div className="text-xs text-white/50">
-            {autoPickOn
-              ? "After SOLD/UNSOLD, the next AVAILABLE player (by number) goes live automatically."
-              : "Manual mode — use Start on a player or begin auto auction below."}
-            {nextUp ? (
-              <>
-                {" "}
-                Up next:{" "}
-                <span className="text-white/80">
-                  #{nextUp.number} {nextUp.name}
-                </span>
-              </>
+            {isSpinning
+              ? "Random reel running on the Live Auction page… bidding opens when it stops."
+              : "Picks a random AVAILABLE player. After SOLD/UNSOLD, use Pick next randomly again."}
+            {eligible.length > 0 ? (
+              <span className="text-white/70"> {eligible.length} player(s) in the pool.</span>
             ) : (
               <span className="text-white/40"> No AVAILABLE players left.</span>
             )}
           </div>
         </div>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-white/80">
-          <input
-            type="checkbox"
-            className="h-4 w-4 accent-gold-500"
-            checked={autoPickOn}
-            disabled={busy}
-            onChange={(e) =>
-              run(
-                () => setAutoPick(e.target.checked),
-                e.target.checked ? "Auto-pick enabled." : "Auto-pick disabled."
-              )
-            }
-          />
-          Auto-pick on
-        </label>
         <button
           className="btn-primary"
-          disabled={busy || !nextUp || !!state.currentPlayerId}
+          disabled={busy || !canStartRandom}
           onClick={() =>
             run(async () => {
-              const p = await beginAutoAuction();
-              if (!p) throw new Error("No available players in the queue.");
-            }, `▶ Auto auction started with #${nextUp?.number} ${nextUp?.name}.`)
+              await beginRandomPick();
+            }, "🎲 Random pick started — watch the Live Auction screen.")
           }
         >
-          Start auto auction
+          {state.currentPlayerId ? "Pick next randomly" : "Start auction"}
         </button>
         <button
           className="btn-ghost"
-          disabled={busy || !nextUp || !!state.currentPlayerId}
+          disabled={busy || !canStartRandom}
+          title="Same as Start auction — use after each player is SOLD or UNSOLD"
           onClick={() =>
             run(async () => {
-              const p = await startNextPlayer();
-              if (!p) throw new Error("No available players in the queue.");
-            }, `▶ Started #${nextUp?.number} ${nextUp?.name}.`)
+              await beginRandomPick();
+            }, "🎲 Picking next random player…")
           }
         >
-          Pick next now
+          Pick next randomly
         </button>
+        {isSpinning && (
+          <>
+            <button
+              className="btn-ghost"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  const p = await finalizeRandomPick();
+                  if (!p) throw new Error("Nothing to finalize.");
+                }, "Bidding opened for selected player.")
+              }
+            >
+              Open bidding now
+            </button>
+            <button
+              className="btn-danger text-xs"
+              disabled={busy}
+              onClick={() => run(() => cancelRandomPick(), "Random pick cancelled.")}
+            >
+              Cancel reel
+            </button>
+          </>
+        )}
       </div>
 
       {/* Current state + SOLD/UNSOLD */}
