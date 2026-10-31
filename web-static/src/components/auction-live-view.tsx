@@ -7,6 +7,8 @@ interface Props {
   currentBid: number;
   isRunning: boolean;
   counts: PlayerCounts;
+  autoPick?: boolean;
+  nextUp?: Player | null;
 }
 
 export function AuctionLiveView({
@@ -14,7 +16,9 @@ export function AuctionLiveView({
   currentTeam,
   currentBid,
   isRunning,
-  counts
+  counts,
+  autoPick = false,
+  nextUp = null
 }: Props) {
   if (!currentPlayer) {
     return (
@@ -22,12 +26,22 @@ export function AuctionLiveView({
         <div>
           <div className="text-sm uppercase tracking-widest text-white/50">Auction status</div>
           <div className="mt-2 font-display text-3xl font-bold text-gold-400">
-            Waiting for next player…
+            {autoPick && nextUp ? "Loading next player…" : "Waiting for next player…"}
           </div>
           <p className="mt-3 max-w-lg text-white/60">
-            The auctioneer hasn't picked a player yet. The screen will update live the moment
-            bidding starts.
+            {autoPick
+              ? "Auto auction is on — the next available player appears here automatically after each SOLD or UNSOLD."
+              : "The auctioneer hasn't picked a player yet. The screen will update live the moment bidding starts."}
           </p>
+          {nextUp && (
+            <div className="mt-4 rounded-md border border-gold-500/40 bg-gold-500/10 px-4 py-3">
+              <div className="text-xs uppercase tracking-wider text-gold-300/80">Up next</div>
+              <div className="font-display text-xl font-bold text-white">
+                #{nextUp.number} {nextUp.name}
+              </div>
+              <div className="text-sm text-white/60">{nextUp.skill}</div>
+            </div>
+          )}
           <div className="mt-6 grid grid-cols-3 gap-3">
             <MiniStat label="Sold" value={counts.sold} tone="success" />
             <MiniStat label="Unsold" value={counts.unsold} tone="danger" />

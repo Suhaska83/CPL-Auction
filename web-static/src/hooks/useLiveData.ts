@@ -79,7 +79,8 @@ export function useAuctionState(): { state: AuctionState; loading: boolean } {
     currentPlayerId: null,
     currentBid: 0,
     currentTeamId: null,
-    isRunning: false
+    isRunning: false,
+    autoPick: false
   };
   const { value, loading } = useDbValue<AuctionState | null>("state", null);
   return { state: value ?? initial, loading };

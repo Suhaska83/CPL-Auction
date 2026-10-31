@@ -1,6 +1,22 @@
 import { ref, get, set, update, push } from "firebase/database";
 import { getFirebase } from "@/firebase";
+import { pickNextEligiblePlayer } from "@/lib/auction-queue";
 import type { Player, Team, AuctionState } from "@/types";
+
+function playersRecordToList(raw: Record<string, Player> | null): Player[] {
+  if (!raw) return [];
+  return Object.entries(raw).map(([id, p]) => ({ ...p, id }));
+}
+
+function clearedState(autoPick: boolean): AuctionState {
+  return {
+    currentPlayerId: null,
+    currentBid: 0,
+    currentTeamId: null,
+    isRunning: false,
+    autoPick
+  };
+}
 
 // ─── Start bidding on a player ─────────────────────────────────────
 export async function startPlayer(playerId: string) {
@@ -10,15 +26,57 @@ export async function startPlayer(playerId: string) {
   if (!player) throw new Error("Player not found");
   if (player.status === "SOLD") throw new Error("Player already sold");
 
+  const stateSnap = await get(ref(db, "state"));
+  const prev = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
+
   await update(ref(db), {
     [`players/${playerId}/status`]: "ON_AUCTION",
     state: {
       currentPlayerId: playerId,
       currentBid: player.basePrice,
       currentTeamId: null,
-      isRunning: true
+      isRunning: true,
+      autoPick: prev.autoPick === true
     } satisfies AuctionState
   });
+}
+
+/** Start the next AVAILABLE player (lowest number). */
+export async function startNextPlayer(): Promise<Player | null> {
+  const { db } = getFirebase();
+  const [playersSnap, stateSnap] = await Promise.all([
+    get(ref(db, "players")),
+    get(ref(db, "state"))
+  ]);
+  const state = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
+  if (state.currentPlayerId) {
+    throw new Error("A player is already on auction. Mark SOLD/UNSOLD or pause first.");
+  }
+
+  const next = pickNextEligiblePlayer(playersRecordToList(playersSnap.val() as Record<string, Player> | null));
+  if (!next) return null;
+
+  await startPlayer(next.id);
+  return next;
+}
+
+export async function setAutoPick(enabled: boolean) {
+  const { db } = getFirebase();
+  await update(ref(db), { "state/autoPick": enabled });
+}
+
+/** Enable auto-pick and immediately put the first queued player live. */
+export async function beginAutoAuction(): Promise<Player | null> {
+  const { db } = getFirebase();
+  await update(ref(db), { "state/autoPick": true });
+  return startNextPlayer();
+}
+
+async function maybeAutoAdvance(autoPick: boolean) {
+  if (!autoPick) return null;
+  const next = await startNextPlayer();
+  if (!next) await setAutoPick(false);
+  return next;
 }
 
 // ─── Place a bid ───────────────────────────────────────────────────
@@ -98,17 +156,16 @@ export async function markSold() {
   if (!state?.currentPlayerId) throw new Error("No active player");
   if (!state.currentTeamId) throw new Error("No bids to award");
 
+  const autoPick = state.autoPick === true;
+
   await update(ref(db), {
     [`players/${state.currentPlayerId}/status`]: "SOLD",
     [`players/${state.currentPlayerId}/teamId`]: state.currentTeamId,
     [`players/${state.currentPlayerId}/soldPrice`]: state.currentBid,
-    state: {
-      currentPlayerId: null,
-      currentBid: 0,
-      currentTeamId: null,
-      isRunning: false
-    } satisfies AuctionState
+    state: clearedState(autoPick)
   });
+
+  await maybeAutoAdvance(autoPick);
 }
 
 // ─── Mark current as UNSOLD ────────────────────────────────────────
@@ -118,29 +175,26 @@ export async function markUnsold() {
   const state = stateSnap.val() as AuctionState | null;
   if (!state?.currentPlayerId) throw new Error("No active player");
 
+  const autoPick = state.autoPick === true;
+
   await update(ref(db), {
     [`players/${state.currentPlayerId}/status`]: "UNSOLD",
     [`players/${state.currentPlayerId}/teamId`]: null,
     [`players/${state.currentPlayerId}/soldPrice`]: null,
-    state: {
-      currentPlayerId: null,
-      currentBid: 0,
-      currentTeamId: null,
-      isRunning: false
-    } satisfies AuctionState
+    state: clearedState(autoPick)
   });
+
+  await maybeAutoAdvance(autoPick);
 }
 
 // ─── Reset live state (does not touch sold history unless fullReset) ─
 export async function resetLive(fullReset = false) {
   const { db } = getFirebase();
+  const stateSnap = await get(ref(db, "state"));
+  const prev = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
+
   const updates: Record<string, unknown> = {
-    state: {
-      currentPlayerId: null,
-      currentBid: 0,
-      currentTeamId: null,
-      isRunning: false
-    } satisfies AuctionState
+    state: clearedState(prev.autoPick === true)
   };
 
   const playersSnap = await get(ref(db, "players"));

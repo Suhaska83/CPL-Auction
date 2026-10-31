@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { formatCompact, formatINR } from "@/lib/format";
 import {
+  beginAutoAuction,
   markSold,
   markUnsold,
   placeBid,
   resetLive,
+  setAutoPick,
+  startNextPlayer,
   startPlayer
 } from "@/lib/auction-actions";
+import { pickNextEligiblePlayer } from "@/lib/auction-queue";
 import { applyCplLiveSettings } from "@/lib/manage-actions";
 import { forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
@@ -61,7 +65,9 @@ export function AdminPanel({
     }
   }
 
-  const eligible = players.filter((p) => p.status !== "SOLD");
+  const eligible = players.filter((p) => p.status === "AVAILABLE");
+  const nextUp = pickNextEligiblePlayer(players);
+  const autoPickOn = state.autoPick === true;
 
   return (
     <div className="space-y-6">
@@ -161,6 +167,70 @@ export function AdminPanel({
           }}
         >
           Full reset
+        </button>
+      </div>
+
+      {/* Auto player queue */}
+      <div className="card flex flex-wrap items-center gap-3 p-4">
+        <div className="mr-auto min-w-[200px]">
+          <div className="font-display text-lg font-bold uppercase text-gold-400">
+            Auto pick players
+          </div>
+          <div className="text-xs text-white/50">
+            {autoPickOn
+              ? "After SOLD/UNSOLD, the next AVAILABLE player (by number) goes live automatically."
+              : "Manual mode — use Start on a player or begin auto auction below."}
+            {nextUp ? (
+              <>
+                {" "}
+                Up next:{" "}
+                <span className="text-white/80">
+                  #{nextUp.number} {nextUp.name}
+                </span>
+              </>
+            ) : (
+              <span className="text-white/40"> No AVAILABLE players left.</span>
+            )}
+          </div>
+        </div>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-white/80">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-gold-500"
+            checked={autoPickOn}
+            disabled={busy}
+            onChange={(e) =>
+              run(
+                () => setAutoPick(e.target.checked),
+                e.target.checked ? "Auto-pick enabled." : "Auto-pick disabled."
+              )
+            }
+          />
+          Auto-pick on
+        </label>
+        <button
+          className="btn-primary"
+          disabled={busy || !nextUp || !!state.currentPlayerId}
+          onClick={() =>
+            run(async () => {
+              const p = await beginAutoAuction();
+              if (!p) throw new Error("No available players in the queue.");
+            }, `▶ Auto auction started with #${nextUp?.number} ${nextUp?.name}.`)
+          }
+        >
+          Start auto auction
+        </button>
+        <button
+          className="btn-ghost"
+          disabled={busy || !nextUp || !!state.currentPlayerId}
+          onClick={() =>
+            run(async () => {
+              const p = await startNextPlayer();
+              if (!p) throw new Error("No available players in the queue.");
+            }, `▶ Started #${nextUp?.number} ${nextUp?.name}.`)
+          }
+        >
+          Pick next now
         </button>
       </div>
 

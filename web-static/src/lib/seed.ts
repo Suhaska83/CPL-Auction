@@ -144,7 +144,8 @@ export async function seedIfEmpty(): Promise<{ seeded: boolean; message: string 
       currentPlayerId: null,
       currentBid: 0,
       currentTeamId: null,
-      isRunning: false
+      isRunning: false,
+      autoPick: false
     },
     bids: null
   });

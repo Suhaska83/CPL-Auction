@@ -46,6 +46,8 @@ export interface AuctionState {
   currentBid: number;
   currentTeamId: string | null;
   isRunning: boolean;
+  /** When true, the next AVAILABLE player is started automatically after SOLD/UNSOLD. */
+  autoPick?: boolean;
 }
 
 export interface TeamStats extends Team {
