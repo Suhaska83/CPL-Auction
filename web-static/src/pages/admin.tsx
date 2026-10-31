@@ -177,6 +177,7 @@ export function AdminPage() {
         <AdminPanel
           tournament={tournament}
           teams={stats}
+          franchiseTeams={teams}
           players={players}
           state={state}
           counts={counts}

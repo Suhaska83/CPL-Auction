@@ -1,10 +1,11 @@
+import { safeLower, safeTrim } from "@/lib/safe-string";
 import type { Player, Team } from "@/types";
 
 /** RTDB may still store legacy `owner`; prefer `caption`. */
 export type TeamLike = Team & { owner?: string };
 
 export function teamCaption(team: TeamLike): string {
-  return (team.caption ?? team.owner ?? "").trim();
+  return safeTrim(team.caption ?? team.owner);
 }
 
 export function normalizeTeam(id: string, raw: TeamLike): Team {
@@ -13,7 +14,7 @@ export function normalizeTeam(id: string, raw: TeamLike): Team {
     ...rest,
     id,
     caption: teamCaption(raw),
-    captionPhotoUrl: raw.captionPhotoUrl?.trim() || null
+    captionPhotoUrl: safeTrim(raw.captionPhotoUrl) || null
   };
 }
 
@@ -25,11 +26,11 @@ export function findPlayerForCaption(team: Team, players: Player[]): Player | un
 
 /** Photo shown for caption in squad list (admin upload or roster name match). */
 export function resolveCaptionPhotoUrl(team: Team, players: Player[]): string | null {
-  const uploaded = team.captionPhotoUrl?.trim();
+  const uploaded = safeTrim(team.captionPhotoUrl);
   if (uploaded) return uploaded;
-  return findPlayerForCaption(team, players)?.photoUrl?.trim() ?? null;
+  return safeTrim(findPlayerForCaption(team, players)?.photoUrl) || null;
 }
 
-function norm(s: string | null | undefined): string {
-  return (s ?? "").trim().toLowerCase();
+function norm(s: unknown): string {
+  return safeLower(s);
 }

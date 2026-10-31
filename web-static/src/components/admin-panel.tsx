@@ -20,6 +20,7 @@ import type {
   AuctionState,
   Player,
   PlayerCounts,
+  Team,
   TeamStats,
   Tournament
 } from "@/types";
@@ -34,6 +35,8 @@ interface Props {
   tournament: Tournament;
   players: Player[];
   teams: TeamStats[];
+  /** Normalized franchises (for auction pool / caption checks). */
+  franchiseTeams: Team[];
   state: AuctionState;
   counts: PlayerCounts;
   currentPlayer: Player | null;
@@ -43,6 +46,7 @@ export function AdminPanel({
   tournament,
   players,
   teams,
+  franchiseTeams,
   state,
   currentPlayer
 }: Props) {
@@ -67,7 +71,7 @@ export function AdminPanel({
     }
   }
 
-  const eligible = eligibleForAuction(players, teams);
+  const eligible = eligibleForAuction(players, franchiseTeams);
   const isSpinning = state.pickPhase === "spinning";
   const canStartRandom =
     eligible.length > 0 && !state.currentPlayerId && !isSpinning;
@@ -135,7 +139,7 @@ export function AdminPanel({
           <div className="text-xs text-white/50">
             Seed sample data, or wipe everything to start fresh. Bid step:{" "}
             <span className="text-white/80">₹{formatINR(tournament.bidIncrement)}</span>
-            {tournament.tagline.trim() ? (
+            {(tournament.tagline ?? "").trim() ? (
               <>
                 {" "}
                 · Tagline: <span className="text-white/80">{tournament.tagline}</span>

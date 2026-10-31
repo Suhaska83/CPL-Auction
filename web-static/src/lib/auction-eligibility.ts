@@ -1,7 +1,8 @@
+import { safeLower } from "@/lib/safe-string";
 import type { Player, Team } from "@/types";
 
-function norm(s: string | null | undefined): string {
-  return (s ?? "").trim().toLowerCase();
+function norm(s: unknown): string {
+  return safeLower(s);
 }
 
 /** Player name matches a franchise caption (caption is on squad, not auctioned). */

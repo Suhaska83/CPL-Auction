@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import { getFirebase, isFirebaseConfigured } from "@/firebase";
 import { CPL_SQUAD_SIZE } from "@/lib/constants";
+import { safeTrim } from "@/lib/safe-string";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type {
   AuctionState,
@@ -53,7 +54,17 @@ export function useTournament(): { value: Tournament; loading: boolean } {
     managedByLogoUrl: null
   };
   const { value, loading } = useDbValue<Tournament | null>("tournament", null);
-  return { value: value ?? fallback, loading };
+  const merged: Tournament = {
+    ...fallback,
+    ...(value ?? {}),
+    name: safeTrim(value?.name) || fallback.name,
+    tagline: safeTrim(value?.tagline),
+    squadSize: Number(value?.squadSize) > 0 ? Number(value?.squadSize) : fallback.squadSize,
+    bidIncrement:
+      Number(value?.bidIncrement) > 0 ? Number(value?.bidIncrement) : fallback.bidIncrement,
+    managedByLogoUrl: value?.managedByLogoUrl ?? fallback.managedByLogoUrl ?? null
+  };
+  return { value: merged, loading };
 }
 
 export function useTeams(): { teams: Team[]; loading: boolean } {

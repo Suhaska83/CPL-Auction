@@ -9,6 +9,7 @@ import {
 } from "@/lib/auction-random";
 import { OPENING_BID } from "@/lib/constants";
 import { isEligibleForAuction } from "@/lib/auction-eligibility";
+import { safeTrim } from "@/lib/safe-string";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type { Player, Team, AuctionState } from "@/types";
 
@@ -19,7 +20,12 @@ function teamsRecordToList(raw: Record<string, TeamLike> | null): Team[] {
 
 function playersRecordToList(raw: Record<string, Player> | null): Player[] {
   if (!raw) return [];
-  return Object.entries(raw).map(([id, p]) => ({ ...p, id }));
+  return Object.entries(raw).map(([id, p]) => ({
+    ...p,
+    id,
+    name: safeTrim(p.name),
+    status: p.status ?? "AVAILABLE"
+  }));
 }
 
 function clearedState(autoPick = false): AuctionState {

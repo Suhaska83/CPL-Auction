@@ -19,7 +19,7 @@ export function TournamentHeader({
         >
           {name}
         </div>
-        {tagline.trim() ? (
+        {(tagline ?? "").trim() ? (
           <div
             className="mt-1 bg-gradient-to-r from-gold-500 to-orange-500 px-4 py-0.5 text-xs font-semibold uppercase tracking-widest text-navy-950 sm:text-sm"
             style={{ clipPath: "polygon(8% 0, 100% 0, 92% 100%, 0% 100%)" }}
