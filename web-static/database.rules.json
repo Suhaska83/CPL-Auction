@@ -18,7 +18,7 @@
     },
     "teams": {
       "$teamId": {
-        ".validate": "newData.hasChildren(['name','owner','shortCode','totalBudget','reserveBalance']) || newData.val() == null"
+        ".validate": "(newData.hasChildren(['name','caption','shortCode','totalBudget','reserveBalance']) || newData.hasChildren(['name','owner','shortCode','totalBudget','reserveBalance'])) || newData.val() == null"
       }
     },
     "players": {

@@ -12,7 +12,7 @@ export interface Tournament {
 export interface Team {
   id: string;
   name: string;
-  owner: string;
+  caption: string;
   shortCode: string;
   logoUrl?: string | null;
   colorHex: string;

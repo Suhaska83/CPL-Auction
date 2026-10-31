@@ -1,6 +1,7 @@
 import { get, ref, remove, set, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
 import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
+import { type TeamLike } from "@/lib/team-utils";
 import type { Player, Team } from "@/types";
 
 // ─── Slugify helper for stable IDs ────────────────────────────────
@@ -25,10 +26,12 @@ export async function upsertTeam(input: TeamInput) {
   if (!id) throw new Error("Team must have a name.");
 
   const existing = await get(ref(db, `teams/${id}`));
+  const caption = (input.caption ?? (input as TeamLike).owner ?? "").trim();
+  if (!caption) throw new Error("Team must have a caption.");
   const team: Team = {
     id,
     name: input.name.trim(),
-    owner: input.owner.trim(),
+    caption,
     shortCode: input.shortCode.trim().toUpperCase(),
     logoUrl: input.logoUrl?.trim() || null,
     colorHex: input.colorHex.trim() || "#1e3a8a",
@@ -151,8 +154,8 @@ export async function bulkUpsertPlayers(players: PlayerInput[]) {
 
 // ─── CSV bulk import for teams ─────────────────────────────────────
 // Accepted header row (case-insensitive, order-flexible):
-//   name, owner, shortCode, colorHex, totalBudget, reserveBalance, logoUrl
-// Only `name` and `owner` are required.
+//   name, caption, shortCode, colorHex, totalBudget, reserveBalance, logoUrl
+// Only `name` and `caption` are required (`owner` accepted as alias).
 export function parseTeamsCsv(text: string): TeamInput[] {
   const rows = text
     .split(/\r?\n/)
@@ -160,21 +163,21 @@ export function parseTeamsCsv(text: string): TeamInput[] {
     .filter(Boolean);
   if (rows.length === 0) return [];
   const header = rows[0].split(",").map((h) => h.trim().toLowerCase());
-  for (const r of ["name", "owner"]) {
-    if (!header.includes(r)) {
-      throw new Error("CSV header must include: name, owner");
-    }
+  if (!header.includes("name") || (!header.includes("caption") && !header.includes("owner"))) {
+    throw new Error("CSV header must include: name, caption (or owner)");
   }
   const idxOf = (k: string) => header.indexOf(k);
+  const captionIdx =
+    idxOf("caption") >= 0 ? idxOf("caption") : idxOf("owner");
   const out: TeamInput[] = [];
   for (let i = 1; i < rows.length; i++) {
     const cells = rows[i].split(",").map((c) => c.trim());
     const name = cells[idxOf("name")];
-    const owner = cells[idxOf("owner")];
-    if (!name || !owner) continue;
+    const caption = cells[captionIdx];
+    if (!name || !caption) continue;
     out.push({
       name,
-      owner,
+      caption,
       shortCode:
         (idxOf("shortcode") >= 0 && cells[idxOf("shortcode")]) ||
         name.slice(0, 3).toUpperCase(),

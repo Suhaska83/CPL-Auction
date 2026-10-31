@@ -14,7 +14,7 @@ import type { Team } from "@/types";
 function empty(): TeamInput {
   return {
     name: "",
-    owner: "",
+    caption: "",
     shortCode: "",
     colorHex: "#1e3a8a",
     logoUrl: null,
@@ -110,12 +110,12 @@ export function ManageTeams({ teams }: { teams: Team[] }) {
             Paste CSV (from Google Sheets / Excel)
           </div>
           <p className="text-xs text-white/60">
-            First row is the header. <code>name</code> and <code>owner</code> are required;{" "}
+            First row is the header. <code>name</code> and <code>caption</code> are required;{" "}
             <code>shortCode, colorHex, totalBudget, reserveBalance, logoUrl</code> are optional.
             Rows with an existing team name will be updated.
           </p>
           <pre className="rounded bg-black/40 p-2 text-[11px] text-white/70">
-{`name,owner,shortCode,colorHex,totalBudget,reserveBalance
+{`name,caption,shortCode,colorHex,totalBudget,reserveBalance
 Fortune Royals,Nirmal,FR,#c9a227,20000,0
 Fortune Challengers,Abhishek,FC,#eab308,20000,0`}
           </pre>
@@ -165,7 +165,7 @@ Fortune Challengers,Abhishek,FC,#eab308,20000,0`}
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold text-white">
-                {t.name} <span className="text-white/50">({t.owner})</span>
+                {t.name} <span className="text-white/50">({t.caption})</span>
               </div>
               <div className="text-xs text-white/50">
                 {t.shortCode} · Budget {formatCompact(t.totalBudget)} · Reserve{" "}
@@ -218,12 +218,12 @@ function TeamForm({
             onChange={(e) => set("name", e.target.value)}
           />
         </Field>
-        <Field label="Owner">
+        <Field label="Caption">
           <input
             className="input"
             required
-            value={draft.owner}
-            onChange={(e) => set("owner", e.target.value)}
+            value={draft.caption ?? (draft as { owner?: string }).owner ?? ""}
+            onChange={(e) => set("caption", e.target.value)}
           />
         </Field>
         <Field label="Short code (2–4 letters)">

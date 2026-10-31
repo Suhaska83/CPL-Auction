@@ -479,7 +479,7 @@ function TeamBidCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold text-white">{team.name}</div>
-          <div className="text-xs text-white/50">Owner {team.owner}</div>
+          <div className="text-xs text-white/50">Caption {team.caption}</div>
         </div>
         {isHighest && (
           <span className="rounded bg-gold-500/20 px-2 py-0.5 text-[10px] font-bold uppercase text-gold-300">

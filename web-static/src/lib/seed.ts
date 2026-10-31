@@ -7,7 +7,7 @@ const TEAMS: Team[] = [
   {
     id: "fr",
     name: "Fortune Royals",
-    owner: "Nirmal",
+    caption: "Nirmal",
     shortCode: "FR",
     colorHex: "#c9a227",
     logoUrl:
@@ -19,7 +19,7 @@ const TEAMS: Team[] = [
   {
     id: "fc",
     name: "Fortune Challengers",
-    owner: "Abhishek",
+    caption: "Abhishek",
     shortCode: "FC",
     colorHex: "#eab308",
     logoUrl:
@@ -31,7 +31,7 @@ const TEAMS: Team[] = [
   {
     id: "fdi",
     name: "Fortune D Indians",
-    owner: "Sabya",
+    caption: "Sabya",
     shortCode: "FDI",
     colorHex: "#1d4ed8",
     logoUrl:
@@ -43,7 +43,7 @@ const TEAMS: Team[] = [
   {
     id: "fsr",
     name: "Fortune Sunrisers",
-    owner: "Hari",
+    caption: "Hari",
     shortCode: "FSR",
     colorHex: "#ea580c",
     logoUrl:

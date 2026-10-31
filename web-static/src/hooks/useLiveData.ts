@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import { getFirebase, isFirebaseConfigured } from "@/firebase";
 import { CPL_SQUAD_SIZE } from "@/lib/constants";
+import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type {
   AuctionState,
   Player,
@@ -57,7 +58,10 @@ export function useTournament(): { value: Tournament; loading: boolean } {
 
 export function useTeams(): { teams: Team[]; loading: boolean } {
   const { value, loading } = useDbValue<Record<string, Team> | null>("teams", null);
-  const teams = useMemo(() => toArray<Team>(value ?? undefined), [value]);
+  const teams = useMemo(
+    () => toArray<TeamLike>(value ?? undefined).map((t) => normalizeTeam(t.id, t)),
+    [value]
+  );
   return { teams, loading };
 }
 
@@ -124,7 +128,7 @@ export function teamStats(
         ...t,
         spent,
         balance,
-        squadCount: owned.length,
+        squadCount: owned.length + 1,
         squadSize,
         maxBid,
         players: owned

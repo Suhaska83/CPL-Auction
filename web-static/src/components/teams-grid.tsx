@@ -1,4 +1,4 @@
-import { SoldPlayerRow } from "@/components/sold-player-row";
+import { CaptionSquadRow, SoldPlayerRow } from "@/components/sold-player-row";
 import { formatCompact } from "@/lib/format";
 import type { TeamStats } from "@/types";
 
@@ -22,7 +22,7 @@ export function TeamsGrid({ teams }: { teams: TeamStats[] }) {
             </div>
             <div className="flex flex-1 flex-col">
               <div className="bg-navy-800 px-3 py-2 text-center font-display text-lg font-bold uppercase text-gold-400">
-                {t.name} ({t.owner})
+                {t.name} ({t.caption})
               </div>
               <div className="mt-2 divide-y divide-panel-border/60 rounded-md bg-panel-light/40">
                 <Row label="Squad Size" value={`${t.squadCount}/${t.squadSize}`} />
@@ -37,24 +37,25 @@ export function TeamsGrid({ teams }: { teams: TeamStats[] }) {
             </div>
           </div>
 
-          {t.players.length > 0 && (
-            <div className="border-t border-panel-border/50 bg-navy-900/70 px-4 py-3">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/60">
-                Purchased Players ({t.players.length})
-              </div>
-              <ul className="flex flex-col gap-2">
-                {t.players.map((p) => (
-                  <li key={p.id}>
-                    <SoldPlayerRow
-                      player={p}
-                      soldPrice={p.soldPrice ?? 0}
-                      teamName={null}
-                    />
-                  </li>
-                ))}
-              </ul>
+          <div className="border-t border-panel-border/50 bg-navy-900/70 px-4 py-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/60">
+              Squad ({t.squadCount}/{t.squadSize})
             </div>
-          )}
+            <ul className="flex flex-col gap-2">
+              <li>
+                <CaptionSquadRow team={t} />
+              </li>
+              {t.players.map((p) => (
+                <li key={p.id}>
+                  <SoldPlayerRow
+                    player={p}
+                    soldPrice={p.soldPrice ?? 0}
+                    teamName={null}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         </article>
       ))}
     </div>

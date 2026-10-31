@@ -155,12 +155,12 @@ export function AuctionLiveView({
               )}
             </div>
             <div className="absolute -right-2 -top-2 rounded-md bg-navy-800 px-2 py-1 text-xs font-bold text-gold-400 ring-1 ring-panel-border">
-              PL. {currentTeam ? currentTeam.squadCount + 1 : "-"}/{currentTeam?.squadSize ?? 8}
+              PL. {currentTeam ? currentTeam.squadCount : "-"}/{currentTeam?.squadSize ?? 8}
             </div>
           </div>
           <div className="min-w-0">
             <div className="font-display text-xl font-bold uppercase tracking-wide text-white sm:text-2xl">
-              {currentTeam ? `${currentTeam.name} (${currentTeam.owner})` : "Awaiting first bid"}
+              {currentTeam ? `${currentTeam.name} (${currentTeam.caption})` : "Awaiting first bid"}
             </div>
             <div className="mt-2 flex items-center gap-2 font-display text-3xl font-extrabold text-gold-400 sm:text-4xl">
               <CoinIcon />
