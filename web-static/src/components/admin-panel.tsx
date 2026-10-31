@@ -6,6 +6,7 @@ import {
   beginRandomPick,
   cancelRandomPick,
   finalizeRandomPick,
+  completeAuctionReset,
   markSold,
   markUnsold,
   placeBid,
@@ -179,16 +180,6 @@ export function AdminPanel({
         >
           Re-seed (destructive)
         </button>
-        <button
-          className="btn-ghost"
-          disabled={busy}
-          onClick={() => {
-            if (!confirm("This will reset ALL players to AVAILABLE and clear bids. Continue?")) return;
-            run(() => resetLive(true), "All players reset to AVAILABLE.");
-          }}
-        >
-          Full reset
-        </button>
       </div>
 
       {/* Random player pick (live reel on Auction page) */}
@@ -254,6 +245,42 @@ export function AdminPanel({
             </button>
           </>
         )}
+      </div>
+
+      {/* Complete auction reset */}
+      <div className="card border-red-900/40 bg-red-950/20 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-[200px] flex-1">
+            <div className="font-display text-lg font-bold uppercase text-red-300">
+              Complete auction reset
+            </div>
+            <p className="mt-1 text-xs text-white/55">
+              Stops any live bid or random reel. Clears bid history, last-sold banner, and
+              returns every player to <strong className="text-white/80">AVAILABLE</strong> (no
+              team assignments). Teams, captions, and player roster are not deleted.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-danger shrink-0"
+            disabled={busy}
+            onClick={() => {
+              if (
+                !confirm(
+                  "Complete auction reset?\n\n• Clears live auction & random pick\n• Removes all bids\n• Resets SOLD / UNSOLD players to AVAILABLE\n• Clears team purchases\n\nTeams and players stay in the database. This cannot be undone."
+                )
+              ) {
+                return;
+              }
+              run(async () => {
+                await completeAuctionReset();
+                setLastSold(null);
+              }, "Auction fully reset — all players are AVAILABLE again.");
+            }}
+          >
+            Reset entire auction
+          </button>
+        </div>
       </div>
 
       {/* Current state + SOLD/UNSOLD */}

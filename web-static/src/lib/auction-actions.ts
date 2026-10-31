@@ -283,6 +283,26 @@ export async function markUnsold() {
   });
 }
 
+/** Wipe auction progress: live state, bids, sold/unsold on all players; keeps teams & player roster. */
+export async function completeAuctionReset() {
+  const { db } = getFirebase();
+
+  const updates: Record<string, unknown> = {
+    state: clearedState(false)
+  };
+
+  const playersSnap = await get(ref(db, "players"));
+  const players = (playersSnap.val() as Record<string, Player> | null) ?? {};
+  for (const [id] of Object.entries(players)) {
+    updates[`players/${id}/status`] = "AVAILABLE";
+    updates[`players/${id}/teamId`] = null;
+    updates[`players/${id}/soldPrice`] = null;
+  }
+  updates.bids = null;
+
+  await update(ref(db), updates);
+}
+
 // ─── Reset live state (does not touch sold history unless fullReset) ─
 export async function resetLive(fullReset = false) {
   const { db } = getFirebase();
