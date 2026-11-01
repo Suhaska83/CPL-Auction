@@ -318,10 +318,12 @@ export async function syncCaptionPlayerIdsForTeams() {
   for (const [teamId, raw] of Object.entries(teamsSnap.val() as Record<string, TeamLike>)) {
     const caption = safeTrim(raw.caption ?? raw.owner);
     if (!caption) continue;
-    const id = resolveCaptionPlayerId(caption, roster, raw.captionPlayerId);
-    const prev = safeTrim(raw.captionPlayerId);
-    if (id !== prev) {
-      updates[`teams/${teamId}/captionPlayerId`] = id;
+    // Re-resolve from caption name so stale/wrong captionPlayerId values are cleared.
+    const id = resolveCaptionPlayerId(caption, roster, undefined);
+    const prev = safeTrim(raw.captionPlayerId) || null;
+    const next = id || null;
+    if (next !== prev) {
+      updates[`teams/${teamId}/captionPlayerId`] = next;
       updated += 1;
     }
   }

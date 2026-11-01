@@ -27,6 +27,7 @@ export function captionPlayerIds(players: Player[], teams: Team[]): Set<string> 
   return ids;
 }
 
+/** True when this roster row is a franchise caption (blocked from auction pool / bids). */
 export function isTeamCaptionPlayer(
   player: Player,
   players: Player[],
@@ -36,7 +37,7 @@ export function isTeamCaptionPlayer(
   return captionPlayerIds(players, teams).has(player.id);
 }
 
-/** Can appear in admin queue / random pick / manual Start. */
+/** Can appear in admin queue / random pick / manual Start (must be AVAILABLE, not a caption). */
 export function isEligibleForAuction(
   player: Player,
   players: Player[],
@@ -45,6 +46,15 @@ export function isEligibleForAuction(
   if (player.status !== "AVAILABLE") return false;
   if (isTeamCaptionPlayer(player, players, teams)) return false;
   return true;
+}
+
+/** Use during live bidding (player is ON_AUCTION) — caption check only. */
+export function canReceiveAuctionBids(
+  player: Player,
+  players: Player[],
+  teams: Team[]
+): boolean {
+  return !isTeamCaptionPlayer(player, players, teams);
 }
 
 export function eligibleForAuction(players: Player[], teams: Team[]): Player[] {

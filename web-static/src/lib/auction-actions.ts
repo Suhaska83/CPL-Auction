@@ -8,7 +8,7 @@ import {
   RANDOM_SPIN_MS
 } from "@/lib/auction-random";
 import { OPENING_BID } from "@/lib/constants";
-import { isEligibleForAuction } from "@/lib/auction-eligibility";
+import { canReceiveAuctionBids, isEligibleForAuction } from "@/lib/auction-eligibility";
 import { safeTrim } from "@/lib/safe-string";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type { Player, Team, AuctionState } from "@/types";
@@ -215,8 +215,11 @@ export async function placeBid(teamId: string, customAmount: number) {
   const player = { ...rawPlayer, id: playerId };
   const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
   const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
-  if (!isEligibleForAuction(player, roster, teams)) {
+  if (!canReceiveAuctionBids(player, roster, teams)) {
     throw new Error("This player is a team caption and cannot be bid on.");
+  }
+  if (player.status !== "ON_AUCTION") {
+    throw new Error("This player is not currently on auction.");
   }
 
   const owned = Object.values(
@@ -277,7 +280,7 @@ export async function markSold() {
   if (raw) {
     const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
     const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
-    if (!isEligibleForAuction({ ...raw, id: playerId }, roster, teams)) {
+    if (!canReceiveAuctionBids({ ...raw, id: playerId }, roster, teams)) {
       throw new Error("This player is a team caption and cannot be sold via auction.");
     }
   }

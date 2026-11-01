@@ -166,12 +166,11 @@ export function AdminPanel({
           onClick={() =>
             run(async () => {
               const { updated } = await syncCaptionPlayerIdsForTeams();
-              if (updated === 0) {
-                throw new Error(
-                  "No caption links changed. Each team caption must match exactly one roster player name (see Manage Teams / Manage Players)."
-                );
-              }
-              setInfo(`Linked ${updated} team caption(s) to roster player records.`);
+              setInfo(
+                updated > 0
+                  ? `Updated ${updated} team caption link(s) in Firebase.`
+                  : "Caption links already up to date (each caption matches zero or one roster name)."
+              );
             })
           }
         >
