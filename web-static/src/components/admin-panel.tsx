@@ -11,7 +11,8 @@ import {
   markUnsold,
   placeBid,
   resetLive,
-  startPlayer
+  startPlayer,
+  undoLastSold
 } from "@/lib/auction-actions";
 import {
   applyCplLiveSettings,
@@ -76,6 +77,16 @@ export function AdminPanel({
   }
 
   const eligible = eligibleForAuction(players, franchiseTeams);
+  const lastSoldPlayer = state.lastSoldPlayerId
+    ? players.find((p) => p.id === state.lastSoldPlayerId) ?? null
+    : null;
+  const lastSoldTeam = state.lastSoldTeamId
+    ? teams.find((t) => t.id === state.lastSoldTeamId) ?? null
+    : null;
+  const canUndoLastSold =
+    !!lastSoldPlayer &&
+    !state.currentPlayerId &&
+    state.pickPhase !== "spinning";
   const isSpinning = state.pickPhase === "spinning";
   const canStartRandom =
     eligible.length > 0 && !state.currentPlayerId && !isSpinning;
@@ -272,6 +283,57 @@ export function AdminPanel({
           </>
         )}
       </div>
+
+      {/* Undo last sale */}
+      {lastSoldPlayer && state.lastSoldPrice != null && state.lastSoldPrice > 0 && (
+        <div className="card flex flex-wrap items-center gap-3 border-amber-700/40 bg-amber-950/20 p-4">
+          <div className="mr-auto min-w-[200px]">
+            <div className="font-display text-lg font-bold uppercase text-amber-300">
+              Undo last sale
+            </div>
+            <div className="mt-1 text-sm text-white/80">
+              #{lastSoldPlayer.number} {lastSoldPlayer.name}
+              {lastSoldTeam ? (
+                <>
+                  {" "}
+                  → <span className="text-gold-400">{lastSoldTeam.name}</span>
+                </>
+              ) : null}{" "}
+              for <span className="text-gold-400">₹{formatINR(state.lastSoldPrice)}</span>
+            </div>
+            <p className="mt-1 text-xs text-white/50">
+              Returns this player to AVAILABLE, removes them from the team squad, and clears
+              the last-sold banner. Bid history for that player is cleared.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-ghost border border-amber-600/50"
+            disabled={busy || !canUndoLastSold}
+            title={
+              !canUndoLastSold
+                ? "Finish the current live player before undoing a sale."
+                : "Revert the most recent SOLD"
+            }
+            onClick={() => {
+              if (
+                !confirm(
+                  `Undo sale of ${lastSoldPlayer.name}?\n\nThey will be AVAILABLE again and removed from the team.`
+                )
+              ) {
+                return;
+              }
+              run(async () => {
+                const p = await undoLastSold();
+                setLastSold(null);
+                setInfo(`↩ Undid sale — #${p.number} ${p.name} is AVAILABLE again.`);
+              });
+            }}
+          >
+            Undo last sold
+          </button>
+        </div>
+      )}
 
       {/* Complete auction reset */}
       <div className="card border-red-900/40 bg-red-950/20 p-4">

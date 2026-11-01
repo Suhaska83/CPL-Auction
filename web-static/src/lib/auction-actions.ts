@@ -278,6 +278,44 @@ export async function markSold() {
   });
 }
 
+/** Revert the most recent SOLD (from state.lastSold*). Player returns to AVAILABLE. */
+export async function undoLastSold(): Promise<Player> {
+  const { db } = getFirebase();
+  const stateSnap = await get(ref(db, "state"));
+  const state = (stateSnap.val() as AuctionState | null) ?? clearedState(false);
+
+  if (state.currentPlayerId) {
+    throw new Error("Mark the current player SOLD or UNSOLD before undoing a sale.");
+  }
+  if (state.pickPhase === "spinning") {
+    throw new Error("Wait for the random pick to finish.");
+  }
+
+  const playerId = state.lastSoldPlayerId;
+  if (!playerId) throw new Error("No last sold player to undo.");
+
+  const psnap = await get(ref(db, `players/${playerId}`));
+  const raw = psnap.val() as Player | null;
+  if (!raw) throw new Error("Last sold player is missing from the roster.");
+
+  const autoPick = state.autoPick === true;
+
+  await update(ref(db), {
+    [`players/${playerId}/status`]: "AVAILABLE",
+    [`players/${playerId}/teamId`]: null,
+    [`players/${playerId}/soldPrice`]: null,
+    [`bids/${playerId}`]: null,
+    state: {
+      ...clearedState(autoPick),
+      lastSoldPlayerId: null,
+      lastSoldTeamId: null,
+      lastSoldPrice: null
+    }
+  });
+
+  return normalizePlayer(playerId, { ...raw, id: playerId });
+}
+
 // ─── Mark current as UNSOLD ────────────────────────────────────────
 export async function markUnsold() {
   const { db } = getFirebase();
