@@ -13,7 +13,7 @@ import {
   resetLive,
   startPlayer
 } from "@/lib/auction-actions";
-import { applyCplLiveSettings } from "@/lib/manage-actions";
+import { applyCplLiveSettings, syncCaptionPlayerIdsForTeams } from "@/lib/manage-actions";
 import { forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
 import type {
@@ -158,6 +158,24 @@ export function AdminPanel({
           }
         >
           Sync budget & squad
+        </button>
+        <button
+          className="btn-ghost"
+          disabled={busy}
+          title="Match each team caption to one roster player by exact name (stores captionPlayerId)"
+          onClick={() =>
+            run(async () => {
+              const { updated } = await syncCaptionPlayerIdsForTeams();
+              if (updated === 0) {
+                throw new Error(
+                  "No caption links changed. Each team caption must match exactly one roster player name (see Manage Teams / Manage Players)."
+                );
+              }
+              setInfo(`Linked ${updated} team caption(s) to roster player records.`);
+            })
+          }
+        >
+          Link caption players
         </button>
         <button
           className="btn-primary"

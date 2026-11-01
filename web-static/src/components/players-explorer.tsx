@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { clsx } from "clsx";
-import { isTeamCaptionPlayer } from "@/lib/auction-eligibility";
+import { captionPlayerIds } from "@/lib/auction-eligibility";
 import { formatCompact } from "@/lib/format";
 import { safeLower } from "@/lib/safe-string";
 import type { Player, PlayerCounts, Team } from "@/types";
@@ -23,17 +23,22 @@ export function PlayersExplorer({
     [teams]
   );
 
+  const blockedCaptionIds = useMemo(
+    () => captionPlayerIds(players, teams),
+    [players, teams]
+  );
+
   const filtered = useMemo(() => {
     const q = safeLower(search);
     return players.filter((p) => {
       if (filter === "AVAILABLE") {
-        if (isTeamCaptionPlayer(p, teams)) return false;
+        if (blockedCaptionIds.has(p.id)) return false;
         if (p.status !== "AVAILABLE" && p.status !== "ON_AUCTION") return false;
       } else if (filter !== "ALL" && p.status !== filter) return false;
       if (q && !safeLower(p.name).includes(q)) return false;
       return true;
     });
-  }, [players, filter, search, teams]);
+  }, [players, filter, search, blockedCaptionIds]);
 
   return (
     <section className="space-y-5">

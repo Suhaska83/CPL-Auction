@@ -13,6 +13,8 @@ export interface Team {
   id: string;
   name: string;
   caption: string;
+  /** When set, only this roster player is excluded from the auction (not name guesses). */
+  captionPlayerId?: string | null;
   /** Optional portrait for squad list; else matched from player roster by caption name. */
   captionPhotoUrl?: string | null;
   shortCode: string;

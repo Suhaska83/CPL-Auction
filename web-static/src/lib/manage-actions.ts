@@ -1,5 +1,6 @@
 import { get, ref, remove, set, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
+import { nameMatchKey } from "@/lib/auction-eligibility";
 import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
 import { formatFirebaseWriteError } from "@/lib/firebase-errors";
 import { safeTrim } from "@/lib/safe-string";
@@ -11,8 +12,32 @@ function teamRtdbPayload(team: Team, caption: string): Record<string, unknown> {
   return {
     ...team,
     caption,
-    owner: caption
+    owner: caption,
+    captionPlayerId: team.captionPlayerId ?? null
   };
+}
+
+function playersRecordToList(raw: Record<string, Player> | null): Player[] {
+  if (!raw) return [];
+  return Object.entries(raw).map(([id, p]) => ({
+    ...p,
+    id,
+    name: safeTrim(p.name)
+  }));
+}
+
+/** Link caption text to a roster row only when exactly one name matches. */
+function resolveCaptionPlayerId(
+  caption: string,
+  players: Player[],
+  explicit: string | null | undefined
+): string | null {
+  const manual = safeTrim(explicit);
+  if (manual) return manual;
+  const capKey = nameMatchKey(caption);
+  if (!capKey) return null;
+  const matches = players.filter((p) => nameMatchKey(p.name) === capKey);
+  return matches.length === 1 ? matches[0]!.id : null;
 }
 
 // ─── Slugify helper for stable IDs ────────────────────────────────
@@ -35,13 +60,27 @@ export async function upsertTeam(input: TeamInput) {
   const id = safeTrim(input.id) || slugify(input.name);
   if (!id) throw new Error("Team must have a name.");
 
-  const existing = await get(ref(db, `teams/${id}`));
+  const [existing, playersSnap] = await Promise.all([
+    get(ref(db, `teams/${id}`)),
+    get(ref(db, "players"))
+  ]);
+  const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
   const caption = safeTrim(input.caption ?? (input as TeamLike).owner);
   if (!caption) throw new Error("Team must have a caption.");
+  const prev = existing.exists() ? (existing.val() as Team) : null;
+  let captionPlayerId = resolveCaptionPlayerId(caption, roster, input.captionPlayerId);
+  if (
+    !captionPlayerId &&
+    prev?.captionPlayerId &&
+    nameMatchKey(prev.caption) === nameMatchKey(caption)
+  ) {
+    captionPlayerId = safeTrim(prev.captionPlayerId) || null;
+  }
   const team: Team = {
     id,
     name: safeTrim(input.name),
     caption,
+    captionPlayerId,
     captionPhotoUrl: safeTrim(input.captionPhotoUrl) || null,
     shortCode: safeTrim(input.shortCode).toUpperCase() || "TBD",
     logoUrl: safeTrim(input.logoUrl) || null,
@@ -50,9 +89,7 @@ export async function upsertTeam(input: TeamInput) {
     reserveBalance: Math.max(0, Math.round(input.reserveBalance)),
     captainName: null,
     captainPhone: null,
-    createdAt: existing.exists()
-      ? (existing.val() as Team).createdAt ?? Date.now()
-      : input.createdAt ?? Date.now()
+    createdAt: prev?.createdAt ?? input.createdAt ?? Date.now()
   };
   try {
     await set(ref(db, `teams/${id}`), teamRtdbPayload(team, caption));
@@ -264,4 +301,30 @@ export async function applyCplSquadSize() {
 export async function applyCplLiveSettings() {
   await applyAllTeamsBudget();
   await applyCplSquadSize();
+  await syncCaptionPlayerIdsForTeams();
+}
+
+/** Writes captionPlayerId on each team when caption name matches exactly one roster player. */
+export async function syncCaptionPlayerIdsForTeams() {
+  const { db } = getFirebase();
+  const [teamsSnap, playersSnap] = await Promise.all([
+    get(ref(db, "teams")),
+    get(ref(db, "players"))
+  ]);
+  if (!teamsSnap.exists()) return { updated: 0 };
+  const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
+  const updates: Record<string, unknown> = {};
+  let updated = 0;
+  for (const [teamId, raw] of Object.entries(teamsSnap.val() as Record<string, TeamLike>)) {
+    const caption = safeTrim(raw.caption ?? raw.owner);
+    if (!caption) continue;
+    const id = resolveCaptionPlayerId(caption, roster, raw.captionPlayerId);
+    const prev = safeTrim(raw.captionPlayerId);
+    if (id !== prev) {
+      updates[`teams/${teamId}/captionPlayerId`] = id;
+      updated += 1;
+    }
+  }
+  if (Object.keys(updates).length) await update(ref(db), updates);
+  return { updated };
 }

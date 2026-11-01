@@ -64,11 +64,15 @@ export async function startPlayer(playerId: string) {
   if (player.status === "UNSOLD") throw new Error("Player was marked UNSOLD and cannot be auctioned again.");
   if (player.status !== "AVAILABLE") throw new Error("Player is not available for auction.");
 
-  const teamsSnap = await get(ref(db, "teams"));
+  const [teamsSnap, allPlayersSnap] = await Promise.all([
+    get(ref(db, "teams")),
+    get(ref(db, "players"))
+  ]);
   const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
+  const roster = playersRecordToList(allPlayersSnap.val() as Record<string, Player> | null);
   const fullPlayer = { ...player, id: playerId };
-  if (!isEligibleForAuction(fullPlayer, teams)) {
-    throw new Error("This player is not eligible for auction (caption or unavailable).");
+  if (!isEligibleForAuction(fullPlayer, roster, teams)) {
+    throw new Error("This player is a team caption and cannot be auctioned.");
   }
 
   const stateSnap = await get(ref(db, "state"));
@@ -210,7 +214,8 @@ export async function placeBid(teamId: string, customAmount: number) {
   if (!rawPlayer) throw new Error("Active player missing");
   const player = { ...rawPlayer, id: playerId };
   const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
-  if (!isEligibleForAuction(player, teams)) {
+  const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
+  if (!isEligibleForAuction(player, roster, teams)) {
     throw new Error("This player is a team caption and cannot be bid on.");
   }
 
@@ -270,8 +275,9 @@ export async function markSold() {
   const playerId = state.currentPlayerId;
   const raw = (playersSnap.val() as Record<string, Player> | null)?.[playerId];
   if (raw) {
+    const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
     const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
-    if (!isEligibleForAuction({ ...raw, id: playerId }, teams)) {
+    if (!isEligibleForAuction({ ...raw, id: playerId }, roster, teams)) {
       throw new Error("This player is a team caption and cannot be sold via auction.");
     }
   }

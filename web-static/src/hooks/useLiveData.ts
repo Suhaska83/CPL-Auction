@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import { getFirebase, isFirebaseConfigured } from "@/firebase";
-import { isTeamCaptionPlayer } from "@/lib/auction-eligibility";
+import { captionPlayerIds } from "@/lib/auction-eligibility";
 import { CPL_SQUAD_SIZE } from "@/lib/constants";
 import { safeTrim } from "@/lib/safe-string";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
@@ -120,11 +120,11 @@ export function useAuctionState(): { state: AuctionState; loading: boolean } {
 // ─── Derived: player counts + team stats ───────────────────────────
 /** `available` = players in the auction pool (excludes franchise captions). */
 export function playerCounts(players: Player[], teams: Team[] = []): PlayerCounts {
+  const blocked = captionPlayerIds(players, teams);
   const counts: PlayerCounts = { all: players.length, available: 0, sold: 0, unsold: 0 };
   for (const p of players) {
     const inPool =
-      (p.status === "AVAILABLE" || p.status === "ON_AUCTION") &&
-      !isTeamCaptionPlayer(p, teams);
+      (p.status === "AVAILABLE" || p.status === "ON_AUCTION") && !blocked.has(p.id);
     if (inPool) counts.available += 1;
     else if (p.status === "SOLD") counts.sold += 1;
     else if (p.status === "UNSOLD") counts.unsold += 1;

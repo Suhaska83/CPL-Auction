@@ -1,4 +1,5 @@
-import { safeLower, safeTrim } from "@/lib/safe-string";
+import { nameMatchKey } from "@/lib/auction-eligibility";
+import { safeTrim } from "@/lib/safe-string";
 import type { Player, Team } from "@/types";
 
 /** RTDB may still store legacy `owner`; prefer `caption`. */
@@ -14,14 +15,18 @@ export function normalizeTeam(id: string, raw: TeamLike): Team {
     ...rest,
     id,
     caption: teamCaption(raw),
+    captionPlayerId: safeTrim(raw.captionPlayerId) || null,
     captionPhotoUrl: safeTrim(raw.captionPhotoUrl) || null
   };
 }
 
 export function findPlayerForCaption(team: Team, players: Player[]): Player | undefined {
-  const cap = norm(team.caption);
-  if (!cap) return undefined;
-  return players.find((p) => norm(p.name) === cap);
+  const linked = safeTrim(team.captionPlayerId);
+  if (linked) return players.find((p) => p.id === linked);
+  const capKey = nameMatchKey(team.caption);
+  if (!capKey) return undefined;
+  const matches = players.filter((p) => nameMatchKey(p.name) === capKey);
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /** Photo shown for caption in squad list (admin upload or roster name match). */
@@ -31,6 +36,3 @@ export function resolveCaptionPhotoUrl(team: Team, players: Player[]): string | 
   return safeTrim(findPlayerForCaption(team, players)?.photoUrl) || null;
 }
 
-function norm(s: unknown): string {
-  return safeLower(s);
-}
