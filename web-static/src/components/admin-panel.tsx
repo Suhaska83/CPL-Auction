@@ -217,7 +217,7 @@ export function AdminPanel({
           <div className="text-xs text-white/50">
             {isSpinning
               ? "Random reel running on the Live Auction page… bidding opens when it stops."
-              : "Picks a random player from the auction pool (team captions are excluded). After SOLD/UNSOLD, use Pick next randomly again."}
+              : "Picks a random player from the auction pool (Player type = Player only). After SOLD/UNSOLD, use Pick next randomly again."}
             {eligible.length > 0 ? (
               <span className="text-white/70"> {eligible.length} player(s) in the pool.</span>
             ) : (

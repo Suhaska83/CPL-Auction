@@ -10,7 +10,7 @@ import {
 } from "@/lib/manage-actions";
 import { safeLower } from "@/lib/safe-string";
 import { ImageUpload } from "@/components/image-upload";
-import type { Player, Team } from "@/types";
+import type { Player, PlayerType, Team } from "@/types";
 
 const SKILLS = ["Batsman", "Bowler", "All Rounder", "Wicket Keeper"];
 
@@ -23,7 +23,7 @@ function empty(number: number): PlayerInput {
   return {
     number,
     name: "",
-    age: null,
+    playerType: "Player",
     skill: "Batsman",
     photoUrl: null,
     phone: null,
@@ -189,12 +189,12 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
           </div>
           <p className="text-xs text-white/60">
             First row must be a header. <code>number</code> and <code>name</code> are required;{" "}
-            <code>skill, age, phone, basePrice, photoUrl</code> are optional. Rows with an existing{" "}
+            <code>skill, playerType, phone, basePrice, photoUrl</code> are optional. Rows with an existing{" "}
             <code>number</code> will be updated; new numbers
             become new players.
           </p>
           <pre className="rounded bg-black/40 p-2 text-[11px] text-white/70">
-{`number,name,skill,age,phone,basePrice
+{`number,name,skill,playerType,phone,basePrice
 1,Abhinab Mishra,Batsman,28,9876543210,2000000
 2,Praneeth,All Rounder,25,9123456780,2000000
 3,Ankur,Bowler,30,9988776655,2500000`}
@@ -233,6 +233,7 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
               <th className="px-3 py-2">#</th>
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Skill</th>
+              <th className="px-3 py-2">Type</th>
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Team</th>
               <th className="px-3 py-2 text-right">Actions</th>
@@ -244,6 +245,17 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
                 <td className="px-3 py-2 font-mono text-white/70">{p.number}</td>
                 <td className="px-3 py-2 font-medium text-white">{p.name}</td>
                 <td className="px-3 py-2 text-white/70">{p.skill}</td>
+                <td className="px-3 py-2">
+                  <span
+                    className={`chip ${
+                      p.playerType === "Caption"
+                        ? "bg-gold-500/20 text-gold-300"
+                        : "bg-navy-800 text-white/70"
+                    }`}
+                  >
+                    {p.playerType}
+                  </span>
+                </td>
                 <td className="px-3 py-2">
                   <span className="chip bg-navy-800 text-white/70">{p.status}</span>
                 </td>
@@ -288,7 +300,7 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-6 text-center text-white/50">
+                <td colSpan={7} className="px-3 py-6 text-center text-white/50">
                   No players.
                 </td>
               </tr>
@@ -354,14 +366,16 @@ function PlayerForm({
             ))}
           </select>
         </Field>
-        <Field label="Age">
-          <input
-            type="number"
+        <Field label="Player type">
+          <select
             className="input"
-            min={1}
-            value={draft.age ?? ""}
-            onChange={(e) => set("age", e.target.value ? Number(e.target.value) : null)}
-          />
+            value={draft.playerType}
+            onChange={(e) => set("playerType", e.target.value as PlayerType)}
+          >
+            <option value="Player">Player — in auction pool</option>
+            <option value="Caption">Caption — not auctioned</option>
+          </select>
+          <Hint>Mark franchise captains as Caption so they never appear in the bid list.</Hint>
         </Field>
         <Field label="Phone (WhatsApp)" span="col-span-2">
           <input

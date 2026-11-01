@@ -4,6 +4,7 @@ import { getFirebase, isFirebaseConfigured } from "@/firebase";
 import { captionPlayerIds } from "@/lib/auction-eligibility";
 import { CPL_SQUAD_SIZE } from "@/lib/constants";
 import { safeTrim } from "@/lib/safe-string";
+import { normalizePlayer } from "@/lib/player-utils";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type {
   AuctionState,
@@ -85,12 +86,7 @@ export function usePlayers(): { players: Player[]; loading: boolean } {
   const players = useMemo(
     () =>
       toArray<Player>(value ?? undefined)
-        .map((p) => ({
-          ...p,
-          name: safeTrim(p.name),
-          skill: safeTrim(p.skill) || "Batsman",
-          status: p.status ?? "AVAILABLE"
-        }))
+        .map((p) => normalizePlayer(p.id, p))
         .sort((a, b) => a.number - b.number),
     [value]
   );

@@ -98,7 +98,7 @@ function buildPlayers(): Record<string, Player> {
       id,
       number: i + 1,
       name,
-      age: 22 + (i % 15),
+      playerType: "Player",
       skill: "All Rounder",
       photoUrl: `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(name)}&radius=50`,
       matches: 40 + ((i * 7) % 60),

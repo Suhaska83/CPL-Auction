@@ -1,4 +1,4 @@
-import { nameMatchKey } from "@/lib/auction-eligibility";
+import { nameMatchKey } from "@/lib/player-utils";
 import { safeTrim } from "@/lib/safe-string";
 import type { Player, Team } from "@/types";
 

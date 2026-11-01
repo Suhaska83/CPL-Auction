@@ -1,11 +1,11 @@
 import { get, ref, remove, set, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
-import { nameMatchKey } from "@/lib/auction-eligibility";
+import { nameMatchKey, normalizePlayer, normalizePlayerType } from "@/lib/player-utils";
 import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
 import { formatFirebaseWriteError } from "@/lib/firebase-errors";
 import { safeTrim } from "@/lib/safe-string";
 import { type TeamLike } from "@/lib/team-utils";
-import type { Player, Team } from "@/types";
+import type { Player, PlayerType, Team } from "@/types";
 
 /** RTDB payload: caption + legacy owner alias so older published rules still accept writes. */
 function teamRtdbPayload(team: Team, caption: string): Record<string, unknown> {
@@ -19,11 +19,7 @@ function teamRtdbPayload(team: Team, caption: string): Record<string, unknown> {
 
 function playersRecordToList(raw: Record<string, Player> | null): Player[] {
   if (!raw) return [];
-  return Object.entries(raw).map(([id, p]) => ({
-    ...p,
-    id,
-    name: safeTrim(p.name)
-  }));
+  return Object.entries(raw).map(([id, p]) => normalizePlayer(id, p));
 }
 
 /** Link caption text to a roster row only when exactly one name matches. */
@@ -131,7 +127,7 @@ export async function upsertPlayer(input: PlayerInput) {
     id,
     number: Math.max(1, Math.round(input.number)),
     name: safeTrim(input.name),
-    age: input.age ? Math.max(1, Math.round(input.age)) : null,
+    playerType: normalizePlayerType(input.playerType),
     skill: safeTrim(input.skill) || "Batsman",
     photoUrl: safeTrim(input.photoUrl) || null,
     phone: safeTrim(input.phone) || null,
@@ -156,8 +152,21 @@ export async function deletePlayer(playerId: string) {
 
 // ─── CSV bulk import for players ──────────────────────────────────
 // Accepted header row (case-insensitive, order-flexible):
-//   number, name, skill, age, basePrice, photoUrl, matches, runs, wickets, points
+//   number, name, skill, playerType, basePrice, photoUrl, matches, runs, wickets, points
+// playerType: Caption | Player (aliases: type, playertype). Legacy `age` column is ignored.
 // Only `number` and `name` are required. Missing optional fields fall back to defaults.
+function playerTypeFromCsv(header: string[], cells: string[]): PlayerType {
+  const idxOf = (k: string) => header.indexOf(k);
+  const i =
+    idxOf("playertype") >= 0
+      ? idxOf("playertype")
+      : idxOf("type") >= 0
+        ? idxOf("type")
+        : -1;
+  if (i >= 0 && cells[i]) return normalizePlayerType(cells[i]);
+  return "Player";
+}
+
 export function parsePlayersCsv(text: string): PlayerInput[] {
   const rows = text
     .split(/\r?\n/)
@@ -182,7 +191,7 @@ export function parsePlayersCsv(text: string): PlayerInput[] {
       number,
       name,
       skill: cells[idxOf("skill")] || "Batsman",
-      age: idxOf("age") >= 0 && cells[idxOf("age")] ? Number(cells[idxOf("age")]) : null,
+      playerType: playerTypeFromCsv(header, cells),
       phone: idxOf("phone") >= 0 ? cells[idxOf("phone")] || null : null,
       basePrice: idxOf("baseprice") >= 0 && cells[idxOf("baseprice")]
         ? Number(cells[idxOf("baseprice")])

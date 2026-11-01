@@ -1,5 +1,8 @@
 export type PlayerStatus = "AVAILABLE" | "ON_AUCTION" | "SOLD" | "UNSOLD";
 
+/** Caption = franchise captain (not auctioned). Player = in the auction pool. */
+export type PlayerType = "Caption" | "Player";
+
 export interface Tournament {
   name: string;
   tagline: string;
@@ -31,7 +34,7 @@ export interface Player {
   id: string;
   number: number;
   name: string;
-  age?: number | null;
+  playerType: PlayerType;
   photoUrl?: string | null;
   skill: string;
   phone?: string | null;

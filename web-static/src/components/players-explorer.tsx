@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { clsx } from "clsx";
-import { captionPlayerIds } from "@/lib/auction-eligibility";
+import { isCaptionPlayer } from "@/lib/player-utils";
 import { formatCompact } from "@/lib/format";
 import { safeLower } from "@/lib/safe-string";
 import type { Player, PlayerCounts, Team } from "@/types";
@@ -23,22 +23,17 @@ export function PlayersExplorer({
     [teams]
   );
 
-  const blockedCaptionIds = useMemo(
-    () => captionPlayerIds(players, teams),
-    [players, teams]
-  );
-
   const filtered = useMemo(() => {
     const q = safeLower(search);
     return players.filter((p) => {
       if (filter === "AVAILABLE") {
-        if (blockedCaptionIds.has(p.id)) return false;
+        if (isCaptionPlayer(p)) return false;
         if (p.status !== "AVAILABLE" && p.status !== "ON_AUCTION") return false;
       } else if (filter !== "ALL" && p.status !== filter) return false;
       if (q && !safeLower(p.name).includes(q)) return false;
       return true;
     });
-  }, [players, filter, search, blockedCaptionIds]);
+  }, [players, filter, search]);
 
   return (
     <section className="space-y-5">
@@ -160,7 +155,7 @@ function PlayerCard({ p, team }: { p: Player; team: Team | undefined }) {
         </div>
         <div className="flex flex-1 flex-col divide-y divide-panel-border/60">
           <Row label="Name" value={p.name} accent />
-          <Row label="Age" value={p.age ? String(p.age) : "-"} />
+          <Row label="Player type" value={p.playerType} />
           <Row label="Skill" value={p.skill} accent />
         </div>
       </div>
