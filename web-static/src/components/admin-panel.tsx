@@ -13,7 +13,11 @@ import {
   resetLive,
   startPlayer
 } from "@/lib/auction-actions";
-import { applyCplLiveSettings, syncCaptionPlayerIdsForTeams } from "@/lib/manage-actions";
+import {
+  applyCplLiveSettings,
+  clearCaptionPlayerLinks,
+  syncCaptionPlayerIdsForTeams
+} from "@/lib/manage-actions";
 import { forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
 import type {
@@ -165,16 +169,17 @@ export function AdminPanel({
           title="Match each team caption to one roster player by exact name (stores captionPlayerId)"
           onClick={() =>
             run(async () => {
+              await clearCaptionPlayerLinks();
               const { updated } = await syncCaptionPlayerIdsForTeams();
               setInfo(
                 updated > 0
-                  ? `Updated ${updated} team caption link(s) in Firebase.`
-                  : "Caption links already up to date (each caption matches zero or one roster name)."
+                  ? `Re-linked ${updated} team caption(s) to roster players.`
+                  : "Caption links reset. No roster name matched a caption exactly once — edit names in Manage Teams / Players if needed."
               );
             })
           }
         >
-          Link caption players
+          Reset & link captions
         </button>
         <button
           className="btn-primary"

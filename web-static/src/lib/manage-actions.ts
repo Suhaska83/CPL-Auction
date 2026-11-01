@@ -32,10 +32,14 @@ function resolveCaptionPlayerId(
   players: Player[],
   explicit: string | null | undefined
 ): string | null {
-  const manual = safeTrim(explicit);
-  if (manual) return manual;
   const capKey = nameMatchKey(caption);
   if (!capKey) return null;
+  const manual = safeTrim(explicit);
+  if (manual) {
+    const row = players.find((p) => p.id === manual);
+    if (row && nameMatchKey(row.name) === capKey) return manual;
+    return null;
+  }
   const matches = players.filter((p) => nameMatchKey(p.name) === capKey);
   return matches.length === 1 ? matches[0]!.id : null;
 }
@@ -69,12 +73,8 @@ export async function upsertTeam(input: TeamInput) {
   if (!caption) throw new Error("Team must have a caption.");
   const prev = existing.exists() ? (existing.val() as Team) : null;
   let captionPlayerId = resolveCaptionPlayerId(caption, roster, input.captionPlayerId);
-  if (
-    !captionPlayerId &&
-    prev?.captionPlayerId &&
-    nameMatchKey(prev.caption) === nameMatchKey(caption)
-  ) {
-    captionPlayerId = safeTrim(prev.captionPlayerId) || null;
+  if (!captionPlayerId && prev?.captionPlayerId) {
+    captionPlayerId = resolveCaptionPlayerId(caption, roster, prev.captionPlayerId);
   }
   const team: Team = {
     id,
@@ -329,4 +329,19 @@ export async function syncCaptionPlayerIdsForTeams() {
   }
   if (Object.keys(updates).length) await update(ref(db), updates);
   return { updated };
+}
+
+/** Clears all captionPlayerId fields (use before re-linking if bids were blocked incorrectly). */
+export async function clearCaptionPlayerLinks() {
+  const { db } = getFirebase();
+  const teamsSnap = await get(ref(db, "teams"));
+  if (!teamsSnap.exists()) return { cleared: 0 };
+  const updates: Record<string, null> = {};
+  let cleared = 0;
+  for (const teamId of Object.keys(teamsSnap.val() as Record<string, unknown>)) {
+    updates[`teams/${teamId}/captionPlayerId`] = null;
+    cleared += 1;
+  }
+  await update(ref(db), updates);
+  return { cleared };
 }

@@ -8,7 +8,7 @@ import {
   RANDOM_SPIN_MS
 } from "@/lib/auction-random";
 import { OPENING_BID } from "@/lib/constants";
-import { canReceiveAuctionBids, isEligibleForAuction } from "@/lib/auction-eligibility";
+import { isEligibleForAuction } from "@/lib/auction-eligibility";
 import { safeTrim } from "@/lib/safe-string";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type { Player, Team, AuctionState } from "@/types";
@@ -198,11 +198,10 @@ export async function beginAutoAuction(): Promise<Player | null> {
 // ─── Place a bid (custom amount only; opening bid ₹200) ─────────────
 export async function placeBid(teamId: string, customAmount: number) {
   const { db } = getFirebase();
-  const [stateSnap, teamSnap, playersSnap, teamsSnap] = await Promise.all([
+  const [stateSnap, teamSnap, playersSnap] = await Promise.all([
     get(ref(db, "state")),
     get(ref(db, `teams/${teamId}`)),
-    get(ref(db, "players")),
-    get(ref(db, "teams"))
+    get(ref(db, "players"))
   ]);
   const state = stateSnap.val() as AuctionState | null;
   const team = teamSnap.val() as Team | null;
@@ -213,13 +212,8 @@ export async function placeBid(teamId: string, customAmount: number) {
   const rawPlayer = (playersSnap.val() as Record<string, Player> | null)?.[playerId];
   if (!rawPlayer) throw new Error("Active player missing");
   const player = { ...rawPlayer, id: playerId };
-  const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
-  const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
-  if (!canReceiveAuctionBids(player, roster, teams)) {
-    throw new Error("This player is a team caption and cannot be bid on.");
-  }
-  if (player.status !== "ON_AUCTION") {
-    throw new Error("This player is not currently on auction.");
+  if (player.status === "SOLD" || player.status === "UNSOLD") {
+    throw new Error("This player is no longer on auction.");
   }
 
   const owned = Object.values(
@@ -266,24 +260,10 @@ export async function placeBid(teamId: string, customAmount: number) {
 // ─── Award to current highest bidder ───────────────────────────────
 export async function markSold() {
   const { db } = getFirebase();
-  const [stateSnap, playersSnap, teamsSnap] = await Promise.all([
-    get(ref(db, "state")),
-    get(ref(db, "players")),
-    get(ref(db, "teams"))
-  ]);
+  const stateSnap = await get(ref(db, "state"));
   const state = stateSnap.val() as AuctionState | null;
   if (!state?.currentPlayerId) throw new Error("No active player");
   if (!state.currentTeamId) throw new Error("No bids to award");
-
-  const playerId = state.currentPlayerId;
-  const raw = (playersSnap.val() as Record<string, Player> | null)?.[playerId];
-  if (raw) {
-    const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
-    const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
-    if (!canReceiveAuctionBids({ ...raw, id: playerId }, roster, teams)) {
-      throw new Error("This player is a team caption and cannot be sold via auction.");
-    }
-  }
 
   const autoPick = state.autoPick === true;
 
