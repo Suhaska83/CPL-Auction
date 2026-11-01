@@ -1,4 +1,4 @@
-import { isCaptionPlayer } from "@/lib/player-utils";
+import { isAuctionPoolStatus, isCaptionPlayer } from "@/lib/player-utils";
 import type { Player, Team } from "@/types";
 
 /** Roster ids marked as Caption (excluded from auction pool). */
@@ -24,7 +24,7 @@ export function isEligibleForAuction(
   _players: Player[],
   _teams: Team[]
 ): boolean {
-  if (player.status !== "AVAILABLE") return false;
+  if (!isAuctionPoolStatus(player.status)) return false;
   if (isCaptionPlayer(player)) return false;
   return true;
 }

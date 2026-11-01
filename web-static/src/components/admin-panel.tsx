@@ -12,6 +12,7 @@ import {
   placeBid,
   resetLive,
   startPlayer,
+  returnUnsoldPlayersToAvailable,
   undoLastSold
 } from "@/lib/auction-actions";
 import {
@@ -203,6 +204,20 @@ export function AdminPanel({
           }
         >
           Seed if empty
+        </button>
+        <button
+          className="btn-ghost"
+          disabled={busy}
+          title="Players still marked UNSOLD in the database become AVAILABLE again"
+          onClick={() =>
+            run(async () => {
+              const n = await returnUnsoldPlayersToAvailable();
+              if (n === 0) throw new Error("No players with UNSOLD status found.");
+              setInfo(`↩ ${n} player(s) set to AVAILABLE.`);
+            })
+          }
+        >
+          Release UNSOLD players
         </button>
         <button
           className="btn-ghost"
@@ -447,7 +462,10 @@ export function AdminPanel({
                 </button>
                 <button
                   onClick={() =>
-                    run(markUnsold, `❎ Marked ${currentPlayer.name} as UNSOLD.`)
+                    run(
+                      markUnsold,
+                      `❎ ${currentPlayer.name} returned to AVAILABLE (no sale).`
+                    )
                   }
                   className="btn-danger"
                   disabled={busy}

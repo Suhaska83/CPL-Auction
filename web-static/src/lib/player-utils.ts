@@ -1,5 +1,10 @@
 import { safeTrim } from "@/lib/safe-string";
-import type { Player, PlayerType } from "@/types";
+import type { Player, PlayerStatus, PlayerType } from "@/types";
+
+/** Can be picked for auction (includes legacy UNSOLD rows). */
+export function isAuctionPoolStatus(status: PlayerStatus | undefined): boolean {
+  return status === "AVAILABLE" || status === "UNSOLD";
+}
 
 /** Normalized full name (trim, collapse spaces, lower). */
 export function nameMatchKey(value: unknown): string {

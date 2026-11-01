@@ -9,7 +9,7 @@ import {
 } from "@/lib/auction-random";
 import { OPENING_BID } from "@/lib/constants";
 import { isEligibleForAuction } from "@/lib/auction-eligibility";
-import { isCaptionPlayer, normalizePlayer } from "@/lib/player-utils";
+import { isAuctionPoolStatus, isCaptionPlayer, normalizePlayer } from "@/lib/player-utils";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type { Player, Team, AuctionState } from "@/types";
 
@@ -56,8 +56,9 @@ export async function startPlayer(playerId: string) {
   const player = psnap.val() as Player | null;
   if (!player) throw new Error("Player not found");
   if (player.status === "SOLD") throw new Error("Player already sold");
-  if (player.status === "UNSOLD") throw new Error("Player was marked UNSOLD and cannot be auctioned again.");
-  if (player.status !== "AVAILABLE") throw new Error("Player is not available for auction.");
+  if (!isAuctionPoolStatus(player.status)) {
+    throw new Error("Player is not available for auction.");
+  }
 
   const [teamsSnap, allPlayersSnap] = await Promise.all([
     get(ref(db, "teams")),
@@ -326,11 +327,31 @@ export async function markUnsold() {
   const autoPick = state.autoPick === true;
 
   await update(ref(db), {
-    [`players/${state.currentPlayerId}/status`]: "UNSOLD",
+    [`players/${state.currentPlayerId}/status`]: "AVAILABLE",
     [`players/${state.currentPlayerId}/teamId`]: null,
     [`players/${state.currentPlayerId}/soldPrice`]: null,
+    [`bids/${state.currentPlayerId}`]: null,
     state: { ...clearedState(autoPick), ...preserveLastSold(state) }
   });
+}
+
+/** Set every player still marked UNSOLD back to AVAILABLE (for older data). */
+export async function returnUnsoldPlayersToAvailable(): Promise<number> {
+  const { db } = getFirebase();
+  const playersSnap = await get(ref(db, "players"));
+  const players = (playersSnap.val() as Record<string, Player> | null) ?? {};
+  const updates: Record<string, unknown> = {};
+  let count = 0;
+  for (const [id, p] of Object.entries(players)) {
+    if (p.status === "UNSOLD") {
+      updates[`players/${id}/status`] = "AVAILABLE";
+      updates[`players/${id}/teamId`] = null;
+      updates[`players/${id}/soldPrice`] = null;
+      count += 1;
+    }
+  }
+  if (count) await update(ref(db), updates);
+  return count;
 }
 
 /** Wipe auction progress: live state, bids, sold/unsold on all players; keeps teams & player roster. */
