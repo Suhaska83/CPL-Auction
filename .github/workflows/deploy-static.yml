@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "web-static/**"
+      - "web-static-kids/**"
       - ".github/workflows/deploy-static.yml"
   workflow_dispatch:
 
@@ -20,9 +21,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web-static
 
     steps:
       - name: Checkout
@@ -33,23 +31,21 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: web-static/package-lock.json
+          cache-dependency-path: |
+            web-static/package-lock.json
+            web-static-kids/package-lock.json
 
       - name: Configure Pages
-        # Auto-enables Pages via API when the workflow has permissions, and
-        # exposes ${{ steps.pages.outputs.base_path }} that we could use instead
-        # of the VITE_BASE variable if you prefer zero manual configuration.
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Install
+      - name: Install main app
+        working-directory: web-static
         run: npm ci
 
-      - name: Build
+      - name: Build main app
+        working-directory: web-static
         env:
-          # Falls back to actions/configure-pages' auto-detected base_path when
-          # the VITE_BASE variable is unset. Works for both project pages
-          # (/<repo>/) and custom domains (/).
           VITE_BASE: ${{ vars.VITE_BASE || steps.pages.outputs.base_path }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
@@ -59,6 +55,28 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: npm run build
+
+      - name: Install Kids app
+        working-directory: web-static-kids
+        run: npm ci
+
+      - name: Build Kids app
+        working-directory: web-static-kids
+        env:
+          VITE_BASE: ${{ format('{0}Kids/', vars.VITE_BASE || steps.pages.outputs.base_path) }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_DATABASE_URL: ${{ secrets.VITE_FIREBASE_DATABASE_URL }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        run: npm run build
+
+      - name: Merge Kids into Pages artifact
+        run: |
+          mkdir -p web-static/dist/Kids
+          cp -r web-static-kids/dist/* web-static/dist/Kids/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
