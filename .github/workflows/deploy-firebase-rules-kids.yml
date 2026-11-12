@@ -1,0 +1,29 @@
+name: Deploy Kids Firebase RTDB rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web-static-kids/database.rules.json"
+      - "web-static-kids/.firebaserc"
+      - "web-static-kids/firebase.json"
+      - ".github/workflows/deploy-firebase-rules-kids.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy-rules:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-static-kids
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KIDS }}
+
+      - name: Deploy Kids Realtime Database rules
+        run: npx --yes firebase-tools@13.35.1 deploy --only database --project cpl-auction-kids --non-interactive
