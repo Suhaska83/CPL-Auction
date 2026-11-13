@@ -4,7 +4,7 @@ import { getFirebase, isFirebaseConfigured } from "@/firebase";
 import { captainPlayerIds } from "@/lib/auction-eligibility";
 import { CPL_SQUAD_SIZE } from "@/lib/constants";
 import { safeTrim } from "@/lib/safe-string";
-import { isAuctionPoolStatus, normalizePlayer } from "@/lib/player-utils";
+import { normalizePlayer } from "@/lib/player-utils";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type {
   AuctionState,
@@ -121,11 +121,10 @@ export function playerCounts(players: Player[], teams: Team[] = []): PlayerCount
   const blocked = captainPlayerIds(players, teams);
   const counts: PlayerCounts = { all: players.length, available: 0, sold: 0, unsold: 0 };
   for (const p of players) {
-    const inPool =
-      (isAuctionPoolStatus(p.status) || p.status === "ON_AUCTION") && !blocked.has(p.id);
-    if (inPool) counts.available += 1;
-    else if (p.status === "SOLD") counts.sold += 1;
+    if (blocked.has(p.id)) continue;
+    if (p.status === "SOLD") counts.sold += 1;
     else if (p.status === "UNSOLD") counts.unsold += 1;
+    else if (p.status === "AVAILABLE" || p.status === "ON_AUCTION") counts.available += 1;
   }
   return counts;
 }

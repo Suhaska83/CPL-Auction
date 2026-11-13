@@ -333,7 +333,7 @@ export async function markUnsold() {
   const autoPick = state.autoPick === true;
 
   await update(ref(db), {
-    [`players/${state.currentPlayerId}/status`]: "AVAILABLE",
+    [`players/${state.currentPlayerId}/status`]: "UNSOLD",
     [`players/${state.currentPlayerId}/teamId`]: null,
     [`players/${state.currentPlayerId}/soldPrice`]: null,
     [`bids/${state.currentPlayerId}`]: null,

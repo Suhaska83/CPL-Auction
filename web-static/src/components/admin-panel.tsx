@@ -481,7 +481,7 @@ export function AdminPanel({
                   onClick={() =>
                     run(
                       markUnsold,
-                      `❎ ${currentPlayer.name} returned to AVAILABLE (no sale).`
+                      `❎ ${currentPlayer.name} marked UNSOLD.`
                     )
                   }
                   className="btn-danger"
