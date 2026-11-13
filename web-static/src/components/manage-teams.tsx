@@ -14,11 +14,11 @@ import type { Team } from "@/types";
 function empty(): TeamInput {
   return {
     name: "",
-    caption: "",
+    captain: "",
     shortCode: "",
     colorHex: "#1e3a8a",
     logoUrl: null,
-    captionPhotoUrl: null,
+    captainPhotoUrl: null,
     totalBudget: CPL_TEAM_BUDGET,
     reserveBalance: 0
   };
@@ -113,12 +113,12 @@ export function ManageTeams({ teams }: { teams: Team[] }) {
             Paste CSV (from Google Sheets / Excel)
           </div>
           <p className="text-xs text-white/60">
-            First row is the header. <code>name</code> and <code>caption</code> are required;{" "}
+            First row is the header. <code>name</code> and <code>captain</code> are required;{" "}
             <code>shortCode, colorHex, totalBudget, reserveBalance, logoUrl</code> are optional.
             Rows with an existing team name will be updated.
           </p>
           <pre className="rounded bg-black/40 p-2 text-[11px] text-white/70">
-{`name,caption,shortCode,colorHex,totalBudget,reserveBalance
+{`name,captain,shortCode,colorHex,totalBudget,reserveBalance
 Fortune Royals,Nirmal,FR,#c9a227,20000,0
 Fortune Challengers,Abhishek,FC,#eab308,20000,0`}
           </pre>
@@ -168,7 +168,7 @@ Fortune Challengers,Abhishek,FC,#eab308,20000,0`}
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold text-white">
-                {t.name} <span className="text-white/50">({t.caption})</span>
+                {t.name} <span className="text-white/50">({t.captain})</span>
               </div>
               <div className="text-xs text-white/50">
                 {t.shortCode} · Budget {formatCompact(t.totalBudget)} · Reserve{" "}
@@ -221,12 +221,17 @@ function TeamForm({
             onChange={(e) => set("name", e.target.value)}
           />
         </Field>
-        <Field label="Caption">
+        <Field label="Captain">
           <input
             className="input"
             required
-            value={draft.caption ?? (draft as { owner?: string }).owner ?? ""}
-            onChange={(e) => set("caption", e.target.value)}
+            value={
+              draft.captain ??
+              (draft as { caption?: string; owner?: string }).caption ??
+              (draft as { owner?: string }).owner ??
+              ""
+            }
+            onChange={(e) => set("captain", e.target.value)}
           />
         </Field>
         <Field label="Short code (2–4 letters)">
@@ -255,10 +260,10 @@ function TeamForm({
         </Field>
         <div className="md:col-span-2">
           <ImageUpload
-            value={draft.captionPhotoUrl ?? null}
-            onChange={(v) => set("captionPhotoUrl", v)}
-            folder="captions"
-            label="Caption photo (squad list)"
+            value={draft.captainPhotoUrl ?? null}
+            onChange={(v) => set("captainPhotoUrl", v)}
+            folder="captains"
+            label="Captain photo (squad list)"
             aspect="square"
           />
         </div>

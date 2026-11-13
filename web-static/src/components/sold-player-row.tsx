@@ -40,16 +40,16 @@ export function SoldPlayerRow({
   );
 }
 
-/** Team caption (not auctioned) — always first in squad list. */
-export function CaptionSquadRow({
+/** Team captain (not auctioned) — always first in squad list. */
+export function CaptainSquadRow({
   team,
   photoUrl
 }: {
-  team: Pick<TeamStats, "caption" | "name" | "shortCode" | "colorHex">;
+  team: Pick<TeamStats, "captain" | "name" | "shortCode" | "colorHex">;
   photoUrl?: string | null;
 }) {
-  const captionLabel = safeTrim(team.caption);
-  const initials = captionLabel
+  const captainLabel = safeTrim(team.captain);
+  const initials = captainLabel
     .split(/\s+/)
     .map((w) => w[0])
     .join("")
@@ -71,12 +71,12 @@ export function CaptionSquadRow({
         )}
       </div>
       <div className="min-w-0 flex-1 text-left">
-        <div className="truncate font-display text-lg font-bold text-white">{captionLabel}</div>
-        <div className="text-xs font-semibold uppercase tracking-wider text-gold-400">Caption</div>
+        <div className="truncate font-display text-lg font-bold text-white">{captainLabel}</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-gold-400">Captain</div>
       </div>
       <div className="shrink-0 text-right">
         <div className="text-[10px] uppercase tracking-wider text-white/50">Role</div>
-        <div className="font-display text-sm font-bold text-white/80">Team caption</div>
+        <div className="font-display text-sm font-bold text-white/80">Team captain</div>
       </div>
     </div>
   );

@@ -5,16 +5,20 @@ import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
 import { DEFAULT_TOURNAMENT_NAME, ensureTournamentDefaults } from "@/lib/seed";
 import { formatFirebaseWriteError } from "@/lib/firebase-errors";
 import { safeTrim } from "@/lib/safe-string";
-import { type TeamLike } from "@/lib/team-utils";
+import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type { Player, PlayerType, Team } from "@/types";
 
-/** RTDB payload: caption + legacy owner alias so older published rules still accept writes. */
-function teamRtdbPayload(team: Team, caption: string): Record<string, unknown> {
+/** RTDB payload: captain + legacy caption/owner keys for published rules. */
+function teamRtdbPayload(team: Team, captain: string): Record<string, unknown> {
+  const pid = team.captainPlayerId ?? null;
   return {
     ...team,
-    caption,
-    owner: caption,
-    captionPlayerId: team.captionPlayerId ?? null
+    captain,
+    caption: captain,
+    captian: captain,
+    owner: captain,
+    captainPlayerId: pid,
+    captionPlayerId: pid
   };
 }
 
@@ -23,13 +27,13 @@ function playersRecordToList(raw: Record<string, Player> | null): Player[] {
   return Object.entries(raw).map(([id, p]) => normalizePlayer(id, p));
 }
 
-/** Link caption text to a roster row only when exactly one name matches. */
-function resolveCaptionPlayerId(
-  caption: string,
+/** Link captain name to a roster row only when exactly one name matches. */
+function resolveCaptainPlayerId(
+  captain: string,
   players: Player[],
   explicit: string | null | undefined
 ): string | null {
-  const capKey = nameMatchKey(caption);
+  const capKey = nameMatchKey(captain);
   if (!capKey) return null;
   const manual = safeTrim(explicit);
   if (manual) {
@@ -66,19 +70,27 @@ export async function upsertTeam(input: TeamInput) {
     get(ref(db, "players"))
   ]);
   const roster = playersRecordToList(playersSnap.val() as Record<string, Player> | null);
-  const caption = safeTrim(input.caption ?? (input as TeamLike).owner);
-  if (!caption) throw new Error("Team must have a caption.");
-  const prev = existing.exists() ? (existing.val() as Team) : null;
-  let captionPlayerId = resolveCaptionPlayerId(caption, roster, input.captionPlayerId);
-  if (!captionPlayerId && prev?.captionPlayerId) {
-    captionPlayerId = resolveCaptionPlayerId(caption, roster, prev.captionPlayerId);
+  const like = input as TeamLike;
+  const captain = safeTrim(
+    input.captain ?? like.caption ?? like.captian ?? like.owner
+  );
+  if (!captain) throw new Error("Team must have a captain.");
+  const prev = existing.exists() ? normalizeTeam(id, existing.val() as TeamLike) : null;
+  let captainPlayerId = resolveCaptainPlayerId(
+    captain,
+    roster,
+    input.captainPlayerId ?? like.captionPlayerId
+  );
+  if (!captainPlayerId && prev?.captainPlayerId) {
+    captainPlayerId = resolveCaptainPlayerId(captain, roster, prev.captainPlayerId);
   }
   const team: Team = {
     id,
     name: safeTrim(input.name),
-    caption,
-    captionPlayerId,
-    captionPhotoUrl: safeTrim(input.captionPhotoUrl) || null,
+    captain,
+    captainPlayerId,
+    captainPhotoUrl:
+      safeTrim(input.captainPhotoUrl) || safeTrim(like.captionPhotoUrl) || null,
     shortCode: safeTrim(input.shortCode).toUpperCase() || "TBD",
     logoUrl: safeTrim(input.logoUrl) || null,
     colorHex: safeTrim(input.colorHex) || "#1e3a8a",
@@ -89,7 +101,7 @@ export async function upsertTeam(input: TeamInput) {
     createdAt: prev?.createdAt ?? input.createdAt ?? Date.now()
   };
   try {
-    await set(ref(db, `teams/${id}`), teamRtdbPayload(team, caption));
+    await set(ref(db, `teams/${id}`), teamRtdbPayload(team, captain));
   } catch (e) {
     throw new Error(formatFirebaseWriteError(e, "Could not save team"));
   }
@@ -154,7 +166,7 @@ export async function deletePlayer(playerId: string) {
 // ─── CSV bulk import for players ──────────────────────────────────
 // Accepted header row (case-insensitive, order-flexible):
 //   number, name, skill, playerType, basePrice, photoUrl, matches, runs, wickets, points
-// playerType: Caption | Player (aliases: type, playertype). Legacy `age` column is ignored.
+// playerType: Captain | Player (aliases: type, playertype; legacy Caption). Legacy `age` ignored.
 // Only `number` and `name` are required. Missing optional fields fall back to defaults.
 function playerTypeFromCsv(header: string[], cells: string[]): PlayerType {
   const idxOf = (k: string) => header.indexOf(k);
@@ -216,8 +228,8 @@ export async function bulkUpsertPlayers(players: PlayerInput[]) {
 
 // ─── CSV bulk import for teams ─────────────────────────────────────
 // Accepted header row (case-insensitive, order-flexible):
-//   name, caption, shortCode, colorHex, totalBudget, reserveBalance, logoUrl
-// Only `name` and `caption` are required (`owner` accepted as alias).
+//   name, captain, shortCode, colorHex, totalBudget, reserveBalance, logoUrl
+// Only `name` and `captain` are required (`caption` / `owner` accepted as aliases).
 export function parseTeamsCsv(text: string): TeamInput[] {
   const rows = text
     .split(/\r?\n/)
@@ -225,21 +237,27 @@ export function parseTeamsCsv(text: string): TeamInput[] {
     .filter(Boolean);
   if (rows.length === 0) return [];
   const header = rows[0].split(",").map((h) => h.trim().toLowerCase());
-  if (!header.includes("name") || (!header.includes("caption") && !header.includes("owner"))) {
-    throw new Error("CSV header must include: name, caption (or owner)");
+  const hasCaptain =
+    header.includes("captain") ||
+    header.includes("caption") ||
+    header.includes("captian") ||
+    header.includes("owner");
+  if (!header.includes("name") || !hasCaptain) {
+    throw new Error("CSV header must include: name, captain (or caption / owner)");
   }
   const idxOf = (k: string) => header.indexOf(k);
-  const captionIdx =
-    idxOf("caption") >= 0 ? idxOf("caption") : idxOf("owner");
+  const captainIdx = ["captain", "caption", "captian", "owner"]
+    .map((k) => idxOf(k))
+    .find((i) => i >= 0)!;
   const out: TeamInput[] = [];
   for (let i = 1; i < rows.length; i++) {
     const cells = rows[i].split(",").map((c) => c.trim());
     const name = cells[idxOf("name")];
-    const caption = cells[captionIdx];
-    if (!name || !caption) continue;
+    const captain = cells[captainIdx];
+    if (!name || !captain) continue;
     out.push({
       name,
-      caption,
+      captain,
       shortCode:
         (idxOf("shortcode") >= 0 && cells[idxOf("shortcode")]) ||
         name.slice(0, 3).toUpperCase(),
@@ -331,11 +349,11 @@ export async function applyCplSquadSize() {
 export async function applyCplLiveSettings() {
   await applyAllTeamsBudget();
   await applyCplSquadSize();
-  await syncCaptionPlayerIdsForTeams();
+  await syncCaptainPlayerIdsForTeams();
 }
 
-/** Writes captionPlayerId on each team when caption name matches exactly one roster player. */
-export async function syncCaptionPlayerIdsForTeams() {
+/** Writes captainPlayerId on each team when captain name matches exactly one roster player. */
+export async function syncCaptainPlayerIdsForTeams() {
   const { db } = getFirebase();
   const [teamsSnap, playersSnap] = await Promise.all([
     get(ref(db, "teams")),
@@ -346,13 +364,14 @@ export async function syncCaptionPlayerIdsForTeams() {
   const updates: Record<string, unknown> = {};
   let updated = 0;
   for (const [teamId, raw] of Object.entries(teamsSnap.val() as Record<string, TeamLike>)) {
-    const caption = safeTrim(raw.caption ?? raw.owner);
-    if (!caption) continue;
-    // Re-resolve from caption name so stale/wrong captionPlayerId values are cleared.
-    const id = resolveCaptionPlayerId(caption, roster, undefined);
-    const prev = safeTrim(raw.captionPlayerId) || null;
+    const team = normalizeTeam(teamId, raw);
+    const captain = safeTrim(team.captain);
+    if (!captain) continue;
+    const id = resolveCaptainPlayerId(captain, roster, undefined);
+    const prev = safeTrim(team.captainPlayerId) || null;
     const next = id || null;
     if (next !== prev) {
+      updates[`teams/${teamId}/captainPlayerId`] = next;
       updates[`teams/${teamId}/captionPlayerId`] = next;
       updated += 1;
     }
@@ -361,14 +380,15 @@ export async function syncCaptionPlayerIdsForTeams() {
   return { updated };
 }
 
-/** Clears all captionPlayerId fields (use before re-linking if bids were blocked incorrectly). */
-export async function clearCaptionPlayerLinks() {
+/** Clears all captainPlayerId fields (use before re-linking if bids were blocked incorrectly). */
+export async function clearCaptainPlayerLinks() {
   const { db } = getFirebase();
   const teamsSnap = await get(ref(db, "teams"));
   if (!teamsSnap.exists()) return { cleared: 0 };
   const updates: Record<string, null> = {};
   let cleared = 0;
   for (const teamId of Object.keys(teamsSnap.val() as Record<string, unknown>)) {
+    updates[`teams/${teamId}/captainPlayerId`] = null;
     updates[`teams/${teamId}/captionPlayerId`] = null;
     cleared += 1;
   }

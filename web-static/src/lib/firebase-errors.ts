@@ -12,7 +12,7 @@ export function formatFirebaseWriteError(e: unknown, context?: string): string {
 
   const hint =
     "Sign in on Admin with Google and ensure your account is listed under /admins/{your-uid} in Firebase Realtime Database (or use Claim admin when no admins exist). " +
-    "If you recently changed team fields (caption, photos), republish database.rules.json: Firebase Console → Realtime Database → Rules → paste from this repo → Publish.";
+    "If you recently changed team fields (captain, photos), republish database.rules.json: Firebase Console → Realtime Database → Rules → paste from this repo → Publish.";
 
   return context ? `${context}: ${base}\n\n${hint}` : `${base}\n\n${hint}`;
 }

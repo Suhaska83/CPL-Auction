@@ -16,7 +16,7 @@
     },
     "teams": {
       "$teamId": {
-        ".validate": "newData.val() == null || (newData.hasChild('name') && newData.hasChild('shortCode') && newData.hasChild('totalBudget') && newData.hasChild('reserveBalance') && (newData.hasChild('caption') || newData.hasChild('owner')))"
+        ".validate": "newData.val() == null || (newData.hasChild('name') && newData.hasChild('shortCode') && newData.hasChild('totalBudget') && newData.hasChild('reserveBalance') && (newData.hasChild('captain') || newData.hasChild('caption') || newData.hasChild('captian') || newData.hasChild('owner')))"
       }
     },
     "players": {

@@ -1,21 +1,21 @@
-import { isAuctionPoolStatus, isCaptionPlayer } from "@/lib/player-utils";
+import { isAuctionPoolStatus, isCaptainPlayer } from "@/lib/player-utils";
 import type { Player, Team } from "@/types";
 
-/** Roster ids marked as Caption (excluded from auction pool). */
-export function captionPlayerIds(players: Player[], _teams?: Team[]): Set<string> {
+/** Roster ids marked as Captain (excluded from auction pool). */
+export function captainPlayerIds(players: Player[], _teams?: Team[]): Set<string> {
   const ids = new Set<string>();
   for (const p of players) {
-    if (p.id && isCaptionPlayer(p)) ids.add(p.id);
+    if (p.id && isCaptainPlayer(p)) ids.add(p.id);
   }
   return ids;
 }
 
-export function isTeamCaptionPlayer(
+export function isTeamCaptainPlayer(
   player: Player,
   _players?: Player[],
   _teams?: Team[]
 ): boolean {
-  return isCaptionPlayer(player);
+  return isCaptainPlayer(player);
 }
 
 /** Can appear in admin queue / random pick / manual Start. */
@@ -25,7 +25,7 @@ export function isEligibleForAuction(
   _teams: Team[]
 ): boolean {
   if (!isAuctionPoolStatus(player.status)) return false;
-  if (isCaptionPlayer(player)) return false;
+  if (isCaptainPlayer(player)) return false;
   return true;
 }
 

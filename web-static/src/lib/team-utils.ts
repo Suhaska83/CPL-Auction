@@ -2,37 +2,44 @@ import { nameMatchKey } from "@/lib/player-utils";
 import { safeTrim } from "@/lib/safe-string";
 import type { Player, Team } from "@/types";
 
-/** RTDB may still store legacy `owner`; prefer `caption`. */
-export type TeamLike = Team & { owner?: string };
+/** Legacy RTDB keys (caption / owner / captian typo). */
+export type TeamLike = Team & {
+  owner?: string;
+  caption?: string;
+  captian?: string;
+  captionPlayerId?: string | null;
+  captionPhotoUrl?: string | null;
+};
 
-export function teamCaption(team: TeamLike): string {
-  return safeTrim(team.caption ?? team.owner);
+export function teamCaptainName(team: TeamLike): string {
+  return safeTrim(team.captain ?? team.caption ?? team.captian ?? team.owner);
 }
 
 export function normalizeTeam(id: string, raw: TeamLike): Team {
-  const { owner: _legacy, ...rest } = raw;
+  const { owner: _o, caption: _c, captian: _t, ...rest } = raw;
   return {
     ...rest,
     id,
-    caption: teamCaption(raw),
-    captionPlayerId: safeTrim(raw.captionPlayerId) || null,
-    captionPhotoUrl: safeTrim(raw.captionPhotoUrl) || null
+    captain: teamCaptainName(raw),
+    captainPlayerId:
+      safeTrim(raw.captainPlayerId) || safeTrim(raw.captionPlayerId) || null,
+    captainPhotoUrl:
+      safeTrim(raw.captainPhotoUrl) || safeTrim(raw.captionPhotoUrl) || null
   };
 }
 
-export function findPlayerForCaption(team: Team, players: Player[]): Player | undefined {
-  const linked = safeTrim(team.captionPlayerId);
+export function findPlayerForCaptain(team: Team, players: Player[]): Player | undefined {
+  const linked = safeTrim(team.captainPlayerId);
   if (linked) return players.find((p) => p.id === linked);
-  const capKey = nameMatchKey(team.caption);
+  const capKey = nameMatchKey(team.captain);
   if (!capKey) return undefined;
   const matches = players.filter((p) => nameMatchKey(p.name) === capKey);
   return matches.length === 1 ? matches[0] : undefined;
 }
 
-/** Photo shown for caption in squad list (admin upload or roster name match). */
-export function resolveCaptionPhotoUrl(team: Team, players: Player[]): string | null {
-  const uploaded = safeTrim(team.captionPhotoUrl);
+/** Photo shown for captain in squad list (admin upload or roster name match). */
+export function resolveCaptainPhotoUrl(team: Team, players: Player[]): string | null {
+  const uploaded = safeTrim(team.captainPhotoUrl);
   if (uploaded) return uploaded;
-  return safeTrim(findPlayerForCaption(team, players)?.photoUrl) || null;
+  return safeTrim(findPlayerForCaptain(team, players)?.photoUrl) || null;
 }
-

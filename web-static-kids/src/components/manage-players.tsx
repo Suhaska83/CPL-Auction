@@ -248,7 +248,7 @@ export function ManagePlayers({ players, teams }: { players: Player[]; teams: Te
                 <td className="px-3 py-2">
                   <span
                     className={`chip ${
-                      p.playerType === "Caption"
+                      p.playerType === "Captain"
                         ? "bg-gold-500/20 text-gold-300"
                         : "bg-navy-800 text-white/70"
                     }`}
@@ -373,9 +373,9 @@ function PlayerForm({
             onChange={(e) => set("playerType", e.target.value as PlayerType)}
           >
             <option value="Player">Player — in auction pool</option>
-            <option value="Caption">Caption — not auctioned</option>
+            <option value="Captain">Captain — not auctioned</option>
           </select>
-          <Hint>Mark franchise captains as Caption so they never appear in the bid list.</Hint>
+          <Hint>Mark franchise captains as Captain so they never appear in the bid list.</Hint>
         </Field>
         <Field label="Phone (WhatsApp)" span="col-span-2">
           <input

@@ -17,8 +17,8 @@ import {
 } from "@/lib/auction-actions";
 import {
   applyCplLiveSettings,
-  clearCaptionPlayerLinks,
-  syncCaptionPlayerIdsForTeams
+  clearCaptainPlayerLinks,
+  syncCaptainPlayerIdsForTeams
 } from "@/lib/manage-actions";
 import { ensureTournamentDefaults, forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
@@ -178,20 +178,20 @@ export function AdminPanel({
         <button
           className="btn-ghost"
           disabled={busy}
-          title="Match each team caption to one roster player by exact name (stores captionPlayerId)"
+          title="Match each team captain to one roster player by exact name (stores captainPlayerId)"
           onClick={() =>
             run(async () => {
-              await clearCaptionPlayerLinks();
-              const { updated } = await syncCaptionPlayerIdsForTeams();
+              await clearCaptainPlayerLinks();
+              const { updated } = await syncCaptainPlayerIdsForTeams();
               setInfo(
                 updated > 0
-                  ? `Re-linked ${updated} team caption(s) to roster players.`
-                  : "Caption links reset. No roster name matched a caption exactly once — edit names in Manage Teams / Players if needed."
+                  ? `Re-linked ${updated} team captain(s) to roster players.`
+                  : "Captain links reset. No roster name matched a captain exactly once — edit names in Manage Teams / Players if needed."
               );
             })
           }
         >
-          Reset & link captions
+          Reset & link captains
         </button>
         <button
           className="btn-ghost"
@@ -377,7 +377,7 @@ export function AdminPanel({
             <p className="mt-1 text-xs text-white/55">
               Stops any live bid or random reel. Clears bid history, last-sold banner, and
               returns every player to <strong className="text-white/80">AVAILABLE</strong> (no
-              team assignments). Teams, captions, and player roster are not deleted.
+              team assignments). Teams, captains, and player roster are not deleted.
             </p>
           </div>
           <button

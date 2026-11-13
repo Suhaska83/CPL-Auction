@@ -13,7 +13,7 @@ export function nameMatchKey(value: unknown): string {
 
 export function normalizePlayerType(value: unknown): PlayerType {
   const s = safeTrim(value).toLowerCase();
-  if (s === "caption") return "Caption";
+  if (s === "captain" || s === "caption" || s === "captian") return "Captain";
   return "Player";
 }
 
@@ -28,6 +28,6 @@ export function normalizePlayer(id: string, raw: Player): Player {
   };
 }
 
-export function isCaptionPlayer(player: Pick<Player, "playerType">): boolean {
-  return normalizePlayerType(player.playerType) === "Caption";
+export function isCaptainPlayer(player: Pick<Player, "playerType">): boolean {
+  return normalizePlayerType(player.playerType) === "Captain";
 }

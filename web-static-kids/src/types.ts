@@ -1,7 +1,7 @@
 export type PlayerStatus = "AVAILABLE" | "ON_AUCTION" | "SOLD" | "UNSOLD";
 
-/** Caption = franchise captain (not auctioned). Player = in the auction pool. */
-export type PlayerType = "Caption" | "Player";
+/** Captain = franchise captain (not auctioned). Player = in the auction pool. */
+export type PlayerType = "Captain" | "Player";
 
 export interface Tournament {
   name: string;
@@ -15,11 +15,11 @@ export interface Tournament {
 export interface Team {
   id: string;
   name: string;
-  caption: string;
+  captain: string;
   /** When set, only this roster player is excluded from the auction (not name guesses). */
-  captionPlayerId?: string | null;
-  /** Optional portrait for squad list; else matched from player roster by caption name. */
-  captionPhotoUrl?: string | null;
+  captainPlayerId?: string | null;
+  /** Optional portrait for squad list; else matched from player roster by captain name. */
+  captainPhotoUrl?: string | null;
   shortCode: string;
   logoUrl?: string | null;
   colorHex: string;

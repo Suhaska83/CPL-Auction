@@ -9,7 +9,7 @@ import {
 } from "@/lib/auction-random";
 import { OPENING_BID } from "@/lib/constants";
 import { isEligibleForAuction } from "@/lib/auction-eligibility";
-import { isAuctionPoolStatus, isCaptionPlayer, normalizePlayer } from "@/lib/player-utils";
+import { isAuctionPoolStatus, isCaptainPlayer, normalizePlayer } from "@/lib/player-utils";
 import { normalizeTeam, type TeamLike } from "@/lib/team-utils";
 import type { Player, Team, AuctionState } from "@/types";
 
@@ -67,8 +67,8 @@ export async function startPlayer(playerId: string) {
   const teams = teamsRecordToList(teamsSnap.val() as Record<string, Team> | null);
   const roster = playersRecordToList(allPlayersSnap.val() as Record<string, Player> | null);
   const fullPlayer = normalizePlayer(playerId, { ...player, id: playerId });
-  if (isCaptionPlayer(fullPlayer)) {
-    throw new Error("Captions cannot be auctioned. Set Player Type to Player in Manage Players.");
+  if (isCaptainPlayer(fullPlayer)) {
+    throw new Error("Captains cannot be auctioned. Set Player Type to Player in Manage Players.");
   }
   if (!isEligibleForAuction(fullPlayer, roster, teams)) {
     throw new Error("This player is not available for auction.");

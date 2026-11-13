@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { clsx } from "clsx";
-import { isAuctionPoolStatus, isCaptionPlayer } from "@/lib/player-utils";
+import { isAuctionPoolStatus, isCaptainPlayer } from "@/lib/player-utils";
 import { formatCompact } from "@/lib/format";
 import { safeLower } from "@/lib/safe-string";
 import type { Player, PlayerCounts, Team } from "@/types";
@@ -27,7 +27,7 @@ export function PlayersExplorer({
     const q = safeLower(search);
     return players.filter((p) => {
       if (filter === "AVAILABLE") {
-        if (isCaptionPlayer(p)) return false;
+        if (isCaptainPlayer(p)) return false;
         if (!isAuctionPoolStatus(p.status) && p.status !== "ON_AUCTION") return false;
       } else if (filter !== "ALL" && p.status !== filter) return false;
       if (q && !safeLower(p.name).includes(q)) return false;

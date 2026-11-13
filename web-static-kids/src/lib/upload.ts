@@ -5,7 +5,7 @@ const INLINE_MAX_DATA_URL_LEN = 1_200_000;
 const ALLOWED =
   /^(image\/(png|jpe?g|gif|webp|svg\+xml|x-png|pjpeg)|application\/octet-stream)$/;
 
-type UploadFolder = "logos" | "players" | "captions" | "misc";
+type UploadFolder = "logos" | "players" | "captains" | "misc";
 
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
   return Promise.race([

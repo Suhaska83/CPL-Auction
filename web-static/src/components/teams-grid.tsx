@@ -1,6 +1,6 @@
-import { CaptionSquadRow, SoldPlayerRow } from "@/components/sold-player-row";
+import { CaptainSquadRow, SoldPlayerRow } from "@/components/sold-player-row";
 import { formatCompact } from "@/lib/format";
-import { resolveCaptionPhotoUrl } from "@/lib/team-utils";
+import { resolveCaptainPhotoUrl } from "@/lib/team-utils";
 import type { Player, TeamStats } from "@/types";
 
 export function TeamsGrid({ teams, players }: { teams: TeamStats[]; players: Player[] }) {
@@ -23,7 +23,7 @@ export function TeamsGrid({ teams, players }: { teams: TeamStats[]; players: Pla
             </div>
             <div className="flex flex-1 flex-col">
               <div className="bg-navy-800 px-3 py-2 text-center font-display text-lg font-bold uppercase text-gold-400">
-                {t.name} ({t.caption})
+                {t.name} ({t.captain})
               </div>
               <div className="mt-2 divide-y divide-panel-border/60 rounded-md bg-panel-light/40">
                 <Row label="Squad Size" value={`${t.squadCount}/${t.squadSize}`} />
@@ -44,7 +44,7 @@ export function TeamsGrid({ teams, players }: { teams: TeamStats[]; players: Pla
             </div>
             <ul className="flex flex-col gap-2">
               <li>
-                <CaptionSquadRow team={t} photoUrl={resolveCaptionPhotoUrl(t, players)} />
+                <CaptainSquadRow team={t} photoUrl={resolveCaptainPhotoUrl(t, players)} />
               </li>
               {t.players.map((p) => (
                 <li key={p.id}>
