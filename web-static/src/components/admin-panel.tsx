@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { eligibleForAuction } from "@/lib/auction-eligibility";
-import { OPENING_BID } from "@/lib/constants";
+import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET, OPENING_BID } from "@/lib/constants";
 import { formatCompact, formatINR } from "@/lib/format";
 import {
   beginRandomPick,
@@ -169,7 +169,7 @@ export function AdminPanel({
           onClick={() =>
             run(
               () => applyCplLiveSettings(),
-              "Teams set to ₹20,000 budget; squad size set to 8."
+              `Teams set to ₹${CPL_TEAM_BUDGET.toLocaleString("en-IN")} budget; squad size set to ${CPL_SQUAD_SIZE}.`
             )
           }
         >

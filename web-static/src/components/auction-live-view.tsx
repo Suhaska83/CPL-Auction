@@ -1,6 +1,6 @@
 import { RandomPickSpinner } from "@/components/random-pick-spinner";
 import { resolveTeamName, SoldPlayerRow } from "@/components/sold-player-row";
-import { OPENING_BID } from "@/lib/constants";
+import { CPL_SQUAD_SIZE, OPENING_BID } from "@/lib/constants";
 import { formatINR } from "@/lib/format";
 import type { AuctionState, Player, PlayerCounts, Team, TeamStats } from "@/types";
 
@@ -159,7 +159,7 @@ export function AuctionLiveView({
               )}
             </div>
             <div className="absolute -right-2 -top-2 rounded-md bg-navy-800 px-2 py-1 text-xs font-bold text-gold-400 ring-1 ring-panel-border">
-              PL. {currentTeam ? currentTeam.squadCount : "-"}/{currentTeam?.squadSize ?? 8}
+              PL. {currentTeam ? currentTeam.squadCount : "-"}/{currentTeam?.squadSize ?? CPL_SQUAD_SIZE}
             </div>
           </div>
           <div className="min-w-0">

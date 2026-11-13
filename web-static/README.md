@@ -48,7 +48,7 @@ firebase deploy --only database
 
 ### 5. Seed the database
 
-Still on the Admin page, click **Seed if empty** — it loads 4 teams and 52 sample players.
+Still on the Admin page, click **Seed if empty** — it loads 3 teams and 52 sample players.
 
 You're ready to auction.
 

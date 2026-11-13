@@ -71,18 +71,6 @@ const TEAMS: Team[] = [
     totalBudget: CPL_TEAM_BUDGET,
     reserveBalance: 0,
     createdAt: 3
-  },
-  {
-    id: "fsr",
-    name: "Fortune Sunrisers",
-    captain: "Hari",
-    shortCode: "FSR",
-    colorHex: "#ea580c",
-    logoUrl:
-      "https://api.dicebear.com/9.x/shapes/svg?seed=fortune-sunrisers&backgroundColor=7c2d12",
-    totalBudget: CPL_TEAM_BUDGET,
-    reserveBalance: 0,
-    createdAt: 4
   }
 ];
 
