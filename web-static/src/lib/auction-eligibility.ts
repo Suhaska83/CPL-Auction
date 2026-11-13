@@ -29,6 +29,24 @@ export function isEligibleForAuction(
   return true;
 }
 
+/** One roster row per id and per display name (lowest player number wins). */
+export function dedupeAuctionPoolPlayers(players: Player[]): Player[] {
+  const sorted = [...players].sort((a, b) => a.number - b.number);
+  const seenId = new Set<string>();
+  const seenName = new Set<string>();
+  const out: Player[] = [];
+  for (const p of sorted) {
+    if (!p.id || seenId.has(p.id)) continue;
+    seenId.add(p.id);
+    const nameKey = p.name.trim().toLowerCase();
+    if (seenName.has(nameKey)) continue;
+    seenName.add(nameKey);
+    out.push(p);
+  }
+  return out;
+}
+
 export function eligibleForAuction(players: Player[], teams: Team[]): Player[] {
-  return players.filter((p) => isEligibleForAuction(p, players, teams));
+  const roster = dedupeAuctionPoolPlayers(players);
+  return roster.filter((p) => isEligibleForAuction(p, players, teams));
 }
