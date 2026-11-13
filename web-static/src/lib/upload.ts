@@ -1,9 +1,13 @@
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebase, storageBucketConfigured } from "@/firebase";
+import { safeTrim } from "@/lib/safe-string";
 
-const MAX_BYTES = 3 * 1024 * 1024; // 3 MB pick
-const INLINE_MAX_BYTES = 350 * 1024; // RTDB-friendly inline data URLs
-const ALLOWED = /^image\/(png|jpe?g|gif|webp|svg\+xml)$/;
+const MAX_BYTES = 5 * 1024 * 1024; // file picker limit
+const INLINE_MAX_DATA_URL_LEN = 1_200_000; // ~900 KB image as base64 in RTDB
+const ALLOWED =
+  /^(image\/(png|jpe?g|gif|webp|svg\+xml|x-png|pjpeg)|application\/octet-stream)$/;
+
+type UploadFolder = "logos" | "players" | "captions" | "misc";
 
 function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
   return Promise.race([
@@ -15,7 +19,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
 }
 
 function inferContentType(file: File): string {
-  if (file.type && ALLOWED.test(file.type)) return file.type;
+  const t = safeTrim(file.type);
+  if (t && ALLOWED.test(t) && t !== "application/octet-stream") {
+    if (t === "image/x-png") return "image/png";
+    if (t === "image/pjpeg") return "image/jpeg";
+    return t;
+  }
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
   if (ext === "png") return "image/png";
@@ -30,14 +39,14 @@ function inferContentType(file: File): string {
   throw new Error("Only PNG / JPG / WebP / GIF / SVG allowed.");
 }
 
-// Basic client-side downscale so uploads stay small (Storage or inline data URL).
-async function downscale(file: File, maxDim = 800): Promise<Blob> {
-  const contentType = inferContentType(file);
-  if (contentType === "image/svg+xml" || contentType === "image/gif") {
-    if (file.size > INLINE_MAX_BYTES) {
-      throw new Error("SVG/GIF too large — paste a hosted URL instead.");
-    }
-    return file;
+// Resize/compress so Storage + inline data URLs stay reliable.
+async function downscale(
+  file: File,
+  opts: { maxDim: number; jpegQuality: number; forceEncode: boolean }
+): Promise<{ blob: Blob; contentType: string }> {
+  const rasterType = inferContentType(file);
+  if (rasterType === "image/svg+xml" || rasterType === "image/gif") {
+    return { blob: file, contentType: rasterType };
   }
 
   const url = URL.createObjectURL(file);
@@ -49,51 +58,63 @@ async function downscale(file: File, maxDim = 800): Promise<Blob> {
         el.onerror = () => reject(new Error("Could not read this image file."));
         el.src = url;
       }),
-      12_000,
+      15_000,
       "Image processing timed out — try a smaller JPG/PNG or paste a URL."
     );
 
-    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-    if (scale === 1 && file.size < 400 * 1024) return file;
+    const longEdge = Math.max(img.width, img.height);
+    const scale = Math.min(1, opts.maxDim / longEdge);
+    const skipCanvas =
+      !opts.forceEncode &&
+      scale === 1 &&
+      file.size <= 200 * 1024 &&
+      longEdge <= opts.maxDim &&
+      (rasterType === "image/jpeg" || rasterType === "image/webp");
+
+    if (skipCanvas) {
+      return { blob: file, contentType: rasterType };
+    }
 
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas not available in this browser.");
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    const outType = contentType === "image/png" ? "image/png" : "image/jpeg";
+    const outType =
+      rasterType === "image/png" && file.size < 400 * 1024 ? "image/png" : "image/jpeg";
     const blob = await withTimeout(
       new Promise<Blob>((res, rej) =>
         canvas.toBlob(
           (b) => (b ? res(b) : rej(new Error("Could not compress image."))),
           outType,
-          0.82
+          opts.jpegQuality
         )
       ),
-      8_000,
+      10_000,
       "Image compression timed out."
     );
-    return blob;
+    return { blob, contentType: outType };
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
-  if (blob.size > INLINE_MAX_BYTES) {
-    throw new Error(
-      `Image is still ${Math.round(blob.size / 1024)} KB after compression. ` +
-        "Use a smaller photo or paste a public image URL."
-    );
-  }
-  return await new Promise((resolve, reject) => {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error("Could not encode image."));
     reader.readAsDataURL(blob);
   });
+  if (dataUrl.length > INLINE_MAX_DATA_URL_LEN) {
+    throw new Error(
+      `Image is too large to store inline after compression (${Math.round(dataUrl.length / 1024)} KB encoded). ` +
+        "Paste a public image URL, or enable Firebase Storage (Storage → Get started + publish storage.rules)."
+    );
+  }
+  return dataUrl;
 }
 
 async function uploadToFirebaseStorage(
@@ -108,9 +129,8 @@ async function uploadToFirebaseStorage(
   try {
     await withTimeout(
       uploadBytes(r, blob, { contentType }),
-      25_000,
-      "Firebase Storage upload timed out. Check that Storage is enabled in Firebase console " +
-        "and storage.rules are published — or paste an image URL instead."
+      30_000,
+      "Firebase Storage upload timed out. Check Storage is enabled and storage.rules are published."
     );
     return await getDownloadURL(r);
   } catch (e) {
@@ -118,22 +138,32 @@ async function uploadToFirebaseStorage(
     const msg = (e as Error).message ?? "";
     if (code === "storage/unauthorized" || code === "storage/unauthenticated") {
       throw new Error(
-        "Upload denied: sign in on Admin with Google first, and publish storage.rules " +
-          "(Firebase console → Storage → Rules)."
+        "Storage upload denied — stay signed in on Admin and publish storage.rules (Firebase → Storage → Rules)."
       );
     }
     if (
       code === "storage/unknown" ||
       code === "storage/object-not-found" ||
+      code === "storage/bucket-not-found" ||
       /404|bucket|timed out/i.test(msg)
     ) {
       throw new Error(
-        "Firebase Storage is not reachable (bucket missing or Storage not enabled). " +
-          "Saving inline instead is attempted automatically."
+        "Firebase Storage bucket not reachable — saving a compressed copy in the database instead."
       );
     }
     throw e;
   }
+}
+
+function folderEncodeOpts(folder: UploadFolder): {
+  maxDim: number;
+  jpegQuality: number;
+  forceEncode: boolean;
+} {
+  if (folder === "misc" || folder === "logos") {
+    return { maxDim: 768, jpegQuality: 0.85, forceEncode: true };
+  }
+  return { maxDim: 800, jpegQuality: 0.82, forceEncode: false };
 }
 
 /**
@@ -143,28 +173,38 @@ async function uploadToFirebaseStorage(
  */
 export async function uploadImage(
   file: File,
-  folder: "logos" | "players" | "captions" | "misc" = "misc"
+  folder: UploadFolder = "misc"
 ): Promise<string> {
-  if (file.size > MAX_BYTES) throw new Error("File too large (max 3 MB).");
+  if (file.size > MAX_BYTES) throw new Error("File too large (max 5 MB).");
 
-  const contentType = inferContentType(file);
-  const blob = await downscale(file);
-  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const opts = folderEncodeOpts(folder);
+  let { blob, contentType } = await downscale(file, opts);
+  const extFromType =
+    contentType === "image/png"
+      ? "png"
+      : contentType === "image/webp"
+        ? "webp"
+        : contentType === "image/gif"
+          ? "gif"
+          : "jpg";
+  const ext =
+    (file.name.split(".").pop() ?? extFromType).toLowerCase().replace(/[^a-z0-9]/g, "") ||
+    extFromType;
 
   if (storageBucketConfigured) {
     try {
       return await uploadToFirebaseStorage(blob, contentType, folder, ext);
     } catch (storageErr) {
-      // Fall back to inline data URL so admins are not stuck on "Uploading…"
       try {
-        const dataUrl = await blobToDataUrl(blob);
-        const hint =
-          storageErr instanceof Error ? storageErr.message : "Storage unavailable.";
-        // eslint-disable-next-line no-console
-        console.warn("[upload] Storage failed, saved inline:", hint);
-        return dataUrl;
-      } catch {
-        throw storageErr;
+        const tighter = await downscale(file, { maxDim: 512, jpegQuality: 0.78, forceEncode: true });
+        blob = tighter.blob;
+        contentType = tighter.contentType;
+        return await blobToDataUrl(blob);
+      } catch (inlineErr) {
+        const storageMsg =
+          storageErr instanceof Error ? storageErr.message : "Storage upload failed.";
+        const inlineMsg = inlineErr instanceof Error ? inlineErr.message : String(inlineErr);
+        throw new Error(`${storageMsg} ${inlineMsg}`);
       }
     }
   }

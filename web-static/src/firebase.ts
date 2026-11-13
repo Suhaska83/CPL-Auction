@@ -11,7 +11,21 @@ import { getDatabase, type Database } from "firebase/database";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { safeTrim } from "@/lib/safe-string";
 
-const config = {
+/** GCS bucket id (not the firebasestorage.app download host). */
+export function normalizeStorageBucket(raw: string, projectId: string): string {
+  let b = safeTrim(raw).replace(/^gs:\/\//i, "");
+  if (!b) return "";
+  if (/firebasestorage\.app$/i.test(b) || b.includes("firebasestorage.app")) {
+    const pid = safeTrim(projectId);
+    return pid ? `${pid}.appspot.com` : "";
+  }
+  if (!b.includes(".") && safeTrim(projectId)) {
+    return `${projectId}.appspot.com`;
+  }
+  return b;
+}
+
+const rawConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string,
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL as string,
@@ -21,11 +35,19 @@ const config = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID as string
 };
 
+const storageBucket = normalizeStorageBucket(
+  rawConfig.storageBucket,
+  rawConfig.projectId
+);
+
+const config = {
+  ...rawConfig,
+  storageBucket: storageBucket || rawConfig.storageBucket
+};
+
 export const isFirebaseConfigured =
   !!config.apiKey && !!config.databaseURL && !!config.projectId;
 
-/** True when a Storage bucket is set in env (optional — uploads can use inline data URLs). */
-const storageBucket = safeTrim(config.storageBucket);
 export const storageBucketConfigured = !!storageBucket;
 
 let _app: FirebaseApp | null = null;
@@ -37,9 +59,7 @@ function initIfNeeded() {
   if (!_app) {
     _app = initializeApp(config);
     _db = getDatabase(_app);
-    _storage = storageBucketConfigured
-      ? getStorage(_app, `gs://${storageBucket}`)
-      : getStorage(_app);
+    _storage = getStorage(_app);
   }
 }
 initIfNeeded();

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ImageUpload } from "@/components/image-upload";
 import { WelcomeDefaultLogo } from "@/components/welcome-default-logo";
+import { formatFirebaseWriteError } from "@/lib/firebase-errors";
 import { updateTournament } from "@/lib/manage-actions";
 import type { Tournament } from "@/types";
 
@@ -25,7 +26,7 @@ export function ManageBranding({ tournament }: { tournament: Tournament }) {
       await updateTournament({ managedByLogoUrl: next });
       setInfo(next ? "Welcome logo saved." : "Welcome logo removed — default icon restored.");
     } catch (e) {
-      setErr((e as Error).message);
+      setErr(formatFirebaseWriteError(e, "Could not save welcome logo"));
       setLogoUrl(tournament.managedByLogoUrl ?? null);
     } finally {
       setBusy(false);
