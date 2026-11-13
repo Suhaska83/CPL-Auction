@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { clsx } from "clsx";
 import { AdminPanel } from "@/components/admin-panel";
 import { BackupPanel } from "@/components/backup-panel";
@@ -16,6 +16,7 @@ import {
   useTournament
 } from "@/hooks/useLiveData";
 import { claimAdmin } from "@/lib/auction-actions";
+import { ensureTournamentDefaults } from "@/lib/seed";
 
 type Tab = "auction" | "teams" | "players" | "branding" | "backup";
 
@@ -36,6 +37,13 @@ export function AdminPage() {
   const [tab, setTab] = useState<Tab>("auction");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin || loading) return;
+    ensureTournamentDefaults().catch(() => {
+      /* shown via branding / seed if rules block write */
+    });
+  }, [isAdmin, loading]);
 
   const stats = useMemo(
     () => teamStats(teams, players, tournament.squadSize),

@@ -1,7 +1,39 @@
 import { ref, set, get, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
 import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
+import { formatFirebaseWriteError } from "@/lib/firebase-errors";
+import { safeTrim } from "@/lib/safe-string";
 import type { Player, Team, Tournament } from "@/types";
+
+export const DEFAULT_TOURNAMENT_NAME = "CPL Kids Auction";
+
+/** Creates `/tournament` in RTDB when missing (required for branding & settings). */
+export async function ensureTournamentDefaults(): Promise<{ created: boolean }> {
+  const { db } = getFirebase();
+  const tRef = ref(db, "tournament");
+  const snap = await get(tRef);
+  const existing = snap.val() as Partial<Tournament> | null;
+  if (snap.exists() && safeTrim(existing?.name)) {
+    return { created: false };
+  }
+
+  const tournament: Tournament = {
+    name: safeTrim(existing?.name) || DEFAULT_TOURNAMENT_NAME,
+    tagline: safeTrim(existing?.tagline) ?? "",
+    squadSize:
+      Number(existing?.squadSize) > 0 ? Number(existing!.squadSize) : CPL_SQUAD_SIZE,
+    bidIncrement:
+      Number(existing?.bidIncrement) > 0 ? Number(existing!.bidIncrement) : 500,
+    managedByLogoUrl: existing?.managedByLogoUrl ?? null
+  };
+
+  try {
+    await set(tRef, tournament);
+  } catch (e) {
+    throw new Error(formatFirebaseWriteError(e, "Could not create /tournament"));
+  }
+  return { created: true };
+}
 
 const TEAMS: Team[] = [
   {
@@ -125,8 +157,18 @@ export async function seedIfEmpty(): Promise<{ seeded: boolean; message: string 
     return { seeded: false, message: "Database already contains data. Skipped." };
   }
 
+  if (!t.exists() || !safeTrim((t.val() as Tournament | null)?.name)) {
+    await ensureTournamentDefaults();
+    if (teams.exists() && players.exists()) {
+      return {
+        seeded: true,
+        message: "Created /tournament (teams and players were already present)."
+      };
+    }
+  }
+
   const tournament: Tournament = {
-    name: "CPL Kids Auction",
+    name: DEFAULT_TOURNAMENT_NAME,
     tagline: "",
     squadSize: CPL_SQUAD_SIZE,
     bidIncrement: 500,

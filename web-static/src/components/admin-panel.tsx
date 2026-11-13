@@ -20,7 +20,7 @@ import {
   clearCaptionPlayerLinks,
   syncCaptionPlayerIdsForTeams
 } from "@/lib/manage-actions";
-import { forceReseed, seedIfEmpty } from "@/lib/seed";
+import { ensureTournamentDefaults, forceReseed, seedIfEmpty } from "@/lib/seed";
 import { WhatsAppNotify } from "@/components/whatsapp-notify";
 import type {
   AuctionState,
@@ -192,6 +192,23 @@ export function AdminPanel({
           }
         >
           Reset & link captions
+        </button>
+        <button
+          className="btn-ghost"
+          disabled={busy}
+          title="Creates /tournament in Firebase if missing (name, squad size, bid step)"
+          onClick={() =>
+            run(async () => {
+              const r = await ensureTournamentDefaults();
+              setInfo(
+                r.created
+                  ? "Created /tournament in Realtime Database."
+                  : "/tournament already exists — no changes."
+              );
+            })
+          }
+        >
+          Create tournament node
         </button>
         <button
           className="btn-primary"

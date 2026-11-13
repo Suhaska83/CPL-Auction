@@ -2,6 +2,7 @@ import { get, ref, remove, set, update } from "firebase/database";
 import { getFirebase } from "@/firebase";
 import { nameMatchKey, normalizePlayer, normalizePlayerType } from "@/lib/player-utils";
 import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET } from "@/lib/constants";
+import { DEFAULT_TOURNAMENT_NAME, ensureTournamentDefaults } from "@/lib/seed";
 import { formatFirebaseWriteError } from "@/lib/firebase-errors";
 import { safeTrim } from "@/lib/safe-string";
 import { type TeamLike } from "@/lib/team-utils";
@@ -281,6 +282,10 @@ export async function updateTournament(patch: {
   managedByLogoUrl?: string | null;
 }) {
   const { db } = getFirebase();
+  if (!(await get(ref(db, "tournament"))).exists()) {
+    await ensureTournamentDefaults();
+  }
+
   const snap = await get(ref(db, "tournament"));
   const existing = (snap.val() ?? {}) as Record<string, unknown>;
 
@@ -292,7 +297,7 @@ export async function updateTournament(patch: {
   const nameInDb = safeTrim(existing.name);
   const nameFromPatch = safeTrim(patch.name);
   if (!nameInDb && !updates["tournament/name"] && Object.keys(updates).length > 0) {
-    updates["tournament/name"] = nameFromPatch || "CPL Kids Auction";
+    updates["tournament/name"] = nameFromPatch || DEFAULT_TOURNAMENT_NAME;
   }
 
   if (Object.keys(updates).length) {
