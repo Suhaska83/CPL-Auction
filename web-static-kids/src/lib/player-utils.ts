@@ -1,9 +1,9 @@
 import { safeTrim } from "@/lib/safe-string";
 import type { Player, PlayerStatus, PlayerType } from "@/types";
 
-/** Can be picked for auction (includes legacy UNSOLD rows). */
+/** Can be picked for auction / random pick (excludes UNSOLD until released in Admin). */
 export function isAuctionPoolStatus(status: PlayerStatus | undefined): boolean {
-  return status === "AVAILABLE" || status === "UNSOLD";
+  return status === "AVAILABLE";
 }
 
 /** Normalized full name (trim, collapse spaces, lower). */
