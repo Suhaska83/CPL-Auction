@@ -29,10 +29,8 @@ export function ImageUpload({
       const url = await uploadImage(file, folder);
       onChange(url);
       if (url.startsWith("data:")) {
-        setErr(null);
-        // Brief hint — not an error; stored in Realtime Database without Firebase Storage.
         setInfo(
-          "Saved (compressed). If you prefer hosted URLs, paste a link below or enable Firebase Storage."
+          "Image saved (compressed in the database — no Firebase Storage needed). Or paste a public https:// URL below."
         );
       }
     } catch (e) {

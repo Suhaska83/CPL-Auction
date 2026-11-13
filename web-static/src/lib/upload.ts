@@ -1,9 +1,7 @@
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getFirebase, storageBucketConfigured } from "@/firebase";
 import { safeTrim } from "@/lib/safe-string";
 
-const MAX_BYTES = 5 * 1024 * 1024; // file picker limit
-const INLINE_MAX_DATA_URL_LEN = 1_200_000; // ~900 KB image as base64 in RTDB
+const MAX_BYTES = 5 * 1024 * 1024;
+const INLINE_MAX_DATA_URL_LEN = 1_200_000;
 const ALLOWED =
   /^(image\/(png|jpe?g|gif|webp|svg\+xml|x-png|pjpeg)|application\/octet-stream)$/;
 
@@ -39,14 +37,13 @@ function inferContentType(file: File): string {
   throw new Error("Only PNG / JPG / WebP / GIF / SVG allowed.");
 }
 
-// Resize/compress so Storage + inline data URLs stay reliable.
 async function downscale(
   file: File,
   opts: { maxDim: number; jpegQuality: number; forceEncode: boolean }
-): Promise<{ blob: Blob; contentType: string }> {
+): Promise<Blob> {
   const rasterType = inferContentType(file);
   if (rasterType === "image/svg+xml" || rasterType === "image/gif") {
-    return { blob: file, contentType: rasterType };
+    return file;
   }
 
   const url = URL.createObjectURL(file);
@@ -71,9 +68,7 @@ async function downscale(
       longEdge <= opts.maxDim &&
       (rasterType === "image/jpeg" || rasterType === "image/webp");
 
-    if (skipCanvas) {
-      return { blob: file, contentType: rasterType };
-    }
+    if (skipCanvas) return file;
 
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(img.width * scale));
@@ -84,7 +79,7 @@ async function downscale(
 
     const outType =
       rasterType === "image/png" && file.size < 400 * 1024 ? "image/png" : "image/jpeg";
-    const blob = await withTimeout(
+    return await withTimeout(
       new Promise<Blob>((res, rej) =>
         canvas.toBlob(
           (b) => (b ? res(b) : rej(new Error("Could not compress image."))),
@@ -95,7 +90,6 @@ async function downscale(
       10_000,
       "Image compression timed out."
     );
-    return { blob, contentType: outType };
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -110,49 +104,11 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
   });
   if (dataUrl.length > INLINE_MAX_DATA_URL_LEN) {
     throw new Error(
-      `Image is too large to store inline after compression (${Math.round(dataUrl.length / 1024)} KB encoded). ` +
-        "Paste a public image URL, or enable Firebase Storage (Storage → Get started + publish storage.rules)."
+      `Image is still too large after compression (${Math.round(dataUrl.length / 1024)} KB). ` +
+        "Use a smaller photo or paste a public image URL (e.g. from Google Drive with link sharing, Imgur)."
     );
   }
   return dataUrl;
-}
-
-async function uploadToFirebaseStorage(
-  blob: Blob,
-  contentType: string,
-  folder: string,
-  ext: string
-): Promise<string> {
-  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { storage } = getFirebase();
-  const r = storageRef(storage, path);
-  try {
-    await withTimeout(
-      uploadBytes(r, blob, { contentType }),
-      30_000,
-      "Firebase Storage upload timed out. Check Storage is enabled and storage.rules are published."
-    );
-    return await getDownloadURL(r);
-  } catch (e) {
-    const code = (e as { code?: string }).code ?? "";
-    const msg = (e as Error).message ?? "";
-    if (code === "storage/unauthorized" || code === "storage/unauthenticated") {
-      throw new Error(
-        "Storage upload denied — stay signed in on Admin and publish storage.rules (Firebase → Storage → Rules)."
-      );
-    }
-    if (
-      code === "storage/unknown" ||
-      code === "storage/object-not-found" ||
-      code === "storage/bucket-not-found" ||
-      /404|bucket|timed out/i.test(msg)
-    ) {
-      throw new Error(
-        "Firebase Storage bucket not reachable — saving a compressed copy in the database instead."
-      );
-    }
-    throw e;
-  }
 }
 
 function folderEncodeOpts(folder: UploadFolder): {
@@ -166,10 +122,14 @@ function folderEncodeOpts(folder: UploadFolder): {
   return { maxDim: 800, jpegQuality: 0.82, forceEncode: false };
 }
 
+const RETRY_OPTS: { maxDim: number; jpegQuality: number; forceEncode: boolean }[] = [
+  { maxDim: 512, jpegQuality: 0.78, forceEncode: true },
+  { maxDim: 384, jpegQuality: 0.72, forceEncode: true }
+];
+
 /**
- * Returns a URL suitable for `photoUrl` / `logoUrl` / `managedByLogoUrl`.
- * Uses Firebase Storage when configured and working; otherwise stores a compressed
- * data URL in Realtime Database (no Storage billing required).
+ * Compress an image in the browser and return a data URL stored in Realtime Database.
+ * Does not use Firebase Storage (Spark / free tier — RTDB only).
  */
 export async function uploadImage(
   file: File,
@@ -177,37 +137,17 @@ export async function uploadImage(
 ): Promise<string> {
   if (file.size > MAX_BYTES) throw new Error("File too large (max 5 MB).");
 
-  const opts = folderEncodeOpts(folder);
-  let { blob, contentType } = await downscale(file, opts);
-  const extFromType =
-    contentType === "image/png"
-      ? "png"
-      : contentType === "image/webp"
-        ? "webp"
-        : contentType === "image/gif"
-          ? "gif"
-          : "jpg";
-  const ext =
-    (file.name.split(".").pop() ?? extFromType).toLowerCase().replace(/[^a-z0-9]/g, "") ||
-    extFromType;
+  const attempts = [folderEncodeOpts(folder), ...RETRY_OPTS];
+  let lastErr: Error | null = null;
 
-  if (storageBucketConfigured) {
+  for (const opts of attempts) {
     try {
-      return await uploadToFirebaseStorage(blob, contentType, folder, ext);
-    } catch (storageErr) {
-      try {
-        const tighter = await downscale(file, { maxDim: 512, jpegQuality: 0.78, forceEncode: true });
-        blob = tighter.blob;
-        contentType = tighter.contentType;
-        return await blobToDataUrl(blob);
-      } catch (inlineErr) {
-        const storageMsg =
-          storageErr instanceof Error ? storageErr.message : "Storage upload failed.";
-        const inlineMsg = inlineErr instanceof Error ? inlineErr.message : String(inlineErr);
-        throw new Error(`${storageMsg} ${inlineMsg}`);
-      }
+      const blob = await downscale(file, opts);
+      return await blobToDataUrl(blob);
+    } catch (e) {
+      lastErr = e instanceof Error ? e : new Error(String(e));
     }
   }
 
-  return blobToDataUrl(blob);
+  throw lastErr ?? new Error("Could not process image.");
 }

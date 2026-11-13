@@ -11,8 +11,9 @@ A **pure client-side** version of the CPL Auction site. All auction state lives 
 1. Go to <https://console.firebase.google.com> → **Add project** → name e.g. `cpl-auction` → disable Analytics (not needed).
 2. **Build → Realtime Database → Create Database** → pick a region (choose the one closest to you) → start in **locked mode** (we'll set rules from this repo).
 3. **Build → Authentication → Get started → Sign-in method → Google → Enable** (add a support email).
-4. **Build → Storage → Get started** → choose the same region → start in production mode. Then **Rules** tab → paste the contents of `storage.rules` → **Publish**. (Required for uploading team logos and player photos through the app.)
-5. **Project settings → General → Your apps → Add app → Web (`</>`)** → nickname it → **Register**. Copy the config object shown.
+4. **Project settings → General → Your apps → Add app → Web (`</>`)** → nickname it → **Register**. Copy the config object shown.
+
+> **Images (logos, branding, player photos):** uploads are compressed and saved **inside Realtime Database** as data URLs. You do **not** need Firebase Storage or a paid plan. Alternatively, paste any public `https://` image URL in Admin.
 
 ### 2. Wire up your local dev
 
@@ -65,7 +66,7 @@ You're ready to auction.
    | `VITE_FIREBASE_AUTH_DOMAIN` | e.g. `cpl-auction.firebaseapp.com` |
    | `VITE_FIREBASE_DATABASE_URL` | e.g. `https://cpl-auction-default-rtdb.asia-southeast1.firebasedatabase.app` |
    | `VITE_FIREBASE_PROJECT_ID` | `cpl-auction` |
-   | `VITE_FIREBASE_STORAGE_BUCKET` | e.g. `cpl-auction.appspot.com` |
+   | `VITE_FIREBASE_STORAGE_BUCKET` | optional — not used for uploads |
    | `VITE_FIREBASE_MESSAGING_SENDER_ID` | number |
    | `VITE_FIREBASE_APP_ID` | `1:…:web:…` |
 
