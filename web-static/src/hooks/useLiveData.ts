@@ -105,6 +105,8 @@ export function useAuctionState(): { state: AuctionState; loading: boolean } {
     spinEndsAt: null,
     spinTargetPlayerId: null,
     spinSequence: null,
+    spinLandIndex: null,
+    spinExtraLaps: null,
     lastSoldPlayerId: null,
     lastSoldTeamId: null,
     lastSoldPrice: null

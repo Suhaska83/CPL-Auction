@@ -60,6 +60,10 @@ export interface AuctionState {
   spinEndsAt?: number | null;
   spinTargetPlayerId?: string | null;
   spinSequence?: string[] | null;
+  /** Position in spinSequence where the reel stops (random each pick). */
+  spinLandIndex?: number | null;
+  /** Full reel lap count before stopping (random each pick). */
+  spinExtraLaps?: number | null;
   lastSoldPlayerId?: string | null;
   lastSoldTeamId?: string | null;
   lastSoldPrice?: number | null;

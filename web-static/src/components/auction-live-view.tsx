@@ -59,6 +59,10 @@ export function AuctionLiveView({
           spinStartedAt={state.spinStartedAt!}
           spinEndsAt={state.spinEndsAt!}
           targetPlayerId={state.spinTargetPlayerId!}
+          landIndex={
+            state.spinLandIndex ?? Math.max(0, state.spinSequence!.length - 1)
+          }
+          extraLaps={state.spinExtraLaps ?? 2}
         />
         <div className="grid grid-cols-3 gap-3">
           <MiniStat label="Sold" value={counts.sold} tone="success" />

@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { spinReelIndex } from "@/lib/auction-random";
 import type { Player } from "@/types";
-
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
 
 interface Props {
   players: Player[];
@@ -11,17 +8,21 @@ interface Props {
   spinStartedAt: number;
   spinEndsAt: number;
   targetPlayerId: string;
+  landIndex: number;
+  extraLaps: number;
 }
 
 /**
- * Horizontal “reel” — names and photos scroll until the random winner is revealed.
+ * Horizontal “reel” — names scroll and stop on a random tile each pick (not always the last).
  */
 export function RandomPickSpinner({
   players,
   sequence,
   spinStartedAt,
   spinEndsAt,
-  targetPlayerId
+  targetPlayerId,
+  landIndex,
+  extraLaps
 }: Props) {
   const [now, setNow] = useState(() => Date.now());
 
@@ -44,18 +45,26 @@ export function RandomPickSpinner({
 
   const duration = Math.max(1, spinEndsAt - spinStartedAt);
   const raw = Math.min(1, Math.max(0, (now - spinStartedAt) / duration));
-  const progress = easeOutCubic(raw);
-  const index = Math.min(sequence.length - 1, Math.floor(progress * (sequence.length - 1)));
+  const done = now >= spinEndsAt;
+
+  const stopIndex = Math.min(
+    Math.max(0, landIndex),
+    Math.max(0, sequence.length - 1)
+  );
+  const laps = Math.max(0, extraLaps);
+  const index = done
+    ? stopIndex
+    : spinReelIndex(raw, sequence.length, stopIndex, laps);
+
   const highlightId = sequence[index] ?? targetPlayerId;
   const highlight = byId[highlightId];
   const target = byId[targetPlayerId];
-  const done = now >= spinEndsAt;
 
   const reelItems = sequence.map((id, i) => {
     const p = byId[id];
     if (!p) return null;
     const active = !done && i === index;
-    const won = done && id === targetPlayerId && i === sequence.length - 1;
+    const won = done && i === stopIndex && id === targetPlayerId;
     return (
       <div
         key={`${id}-${i}`}
@@ -81,7 +90,8 @@ export function RandomPickSpinner({
     );
   });
 
-  const offsetPct = progress * Math.max(0, (sequence.length - 1) * 9);
+  const itemRem = 9;
+  const offsetPct = index * itemRem;
 
   return (
     <div className="card overflow-hidden p-6 sm:p-8">

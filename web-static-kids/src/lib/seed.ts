@@ -5,7 +5,7 @@ import { formatFirebaseWriteError } from "@/lib/firebase-errors";
 import { safeTrim } from "@/lib/safe-string";
 import type { Player, Team, Tournament } from "@/types";
 
-export const DEFAULT_TOURNAMENT_NAME = "CPL Kids Auction";
+export const DEFAULT_TOURNAMENT_NAME = "Celebria Premier League";
 
 /** Creates `/tournament` in RTDB when missing (required for branding & settings). */
 export async function ensureTournamentDefaults(): Promise<{ created: boolean }> {
@@ -193,6 +193,8 @@ export async function seedIfEmpty(): Promise<{ seeded: boolean; message: string 
       spinEndsAt: null,
       spinTargetPlayerId: null,
       spinSequence: null,
+      spinLandIndex: null,
+      spinExtraLaps: null,
       lastSoldPlayerId: null,
       lastSoldTeamId: null,
       lastSoldPrice: null

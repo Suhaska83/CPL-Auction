@@ -35,6 +35,8 @@ function clearedState(autoPick = false): AuctionState {
     spinEndsAt: null,
     spinTargetPlayerId: null,
     spinSequence: null,
+    spinLandIndex: null,
+    spinExtraLaps: null,
     lastSoldPlayerId: null,
     lastSoldTeamId: null,
     lastSoldPrice: null
@@ -90,6 +92,8 @@ export async function startPlayer(playerId: string) {
       spinEndsAt: null,
       spinTargetPlayerId: null,
       spinSequence: null,
+      spinLandIndex: null,
+      spinExtraLaps: null,
       ...preserveLastSold(prev)
     } satisfies AuctionState
   });
@@ -118,7 +122,7 @@ export async function beginRandomPick(): Promise<Player> {
 
   const eligible = eligibleForRandomPick(players, teams);
   const now = Date.now();
-  const sequence = buildSpinSequence(eligible, winner);
+  const { sequence, landIndex, extraLaps } = buildSpinSequence(eligible, winner);
 
   await update(ref(db), {
     state: {
@@ -128,7 +132,9 @@ export async function beginRandomPick(): Promise<Player> {
       spinStartedAt: now,
       spinEndsAt: now + RANDOM_SPIN_MS,
       spinTargetPlayerId: winner.id,
-      spinSequence: sequence
+      spinSequence: sequence,
+      spinLandIndex: landIndex,
+      spinExtraLaps: extraLaps
     } satisfies AuctionState
   });
 

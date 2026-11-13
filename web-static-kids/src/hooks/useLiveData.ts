@@ -49,7 +49,7 @@ function toArray<T extends { id?: string }>(
 // ─── Public hooks ───────────────────────────────────────────────────
 export function useTournament(): { value: Tournament; loading: boolean } {
   const fallback: Tournament = {
-    name: "CPL Kids Auction",
+    name: "Celebria Premier League",
     tagline: "",
     squadSize: CPL_SQUAD_SIZE,
     bidIncrement: 500,
@@ -105,6 +105,8 @@ export function useAuctionState(): { state: AuctionState; loading: boolean } {
     spinEndsAt: null,
     spinTargetPlayerId: null,
     spinSequence: null,
+    spinLandIndex: null,
+    spinExtraLaps: null,
     lastSoldPlayerId: null,
     lastSoldTeamId: null,
     lastSoldPrice: null
