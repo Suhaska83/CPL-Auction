@@ -1,10 +1,19 @@
 import { Link } from "react-router-dom";
 import { WelcomeDefaultLogo } from "@/components/welcome-default-logo";
-import { useTournament } from "@/hooks/useLiveData";
+import { CPL_SQUAD_SIZE, CPL_TEAM_BUDGET, CPL_TEAM_COUNT } from "@/lib/constants";
+import { formatCompact } from "@/lib/format";
+import { usePlayers, useTeams, useTournament } from "@/hooks/useLiveData";
 
 export function WelcomePage() {
   const { value: tournament } = useTournament();
+  const { teams } = useTeams();
+  const { players } = usePlayers();
   const logoUrl = tournament.managedByLogoUrl?.trim();
+
+  const teamCount = teams.length > 0 ? teams.length : CPL_TEAM_COUNT;
+  const squadSize =
+    tournament.squadSize > 0 ? tournament.squadSize : CPL_SQUAD_SIZE;
+  const playerCount = players.length;
 
   return (
     <section className="field-lights relative flex min-h-[calc(100vh-140px)] flex-col items-center justify-center gap-10 text-center">
@@ -23,11 +32,11 @@ export function WelcomePage() {
           <WelcomeDefaultLogo className="mx-auto h-40 w-40 drop-shadow-[0_0_30px_rgba(250,204,21,0.35)] sm:h-48 sm:w-48" />
         )}
         <div className="mt-6 font-display text-6xl font-bold tracking-tight sm:text-7xl">
-          CPL<span className="text-gold-400">Auction</span>
+          CPL<span className="text-gold-400"> Kids</span>
           <sup className="ml-1 text-lg text-white/70">TM</sup>
         </div>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-white/70">
-          The live cricket auction experience. Follow live bids, team squads and player
+          The live youth cricket auction experience. Follow live bids, team squads and player
           stats in real time.
         </p>
       </div>
@@ -45,10 +54,10 @@ export function WelcomePage() {
       </div>
 
       <div className="mt-6 grid w-full max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="Teams" value="4" />
-        <Stat label="Squad Size" value="8" />
-        <Stat label="Budget" value="₹20K" />
-        <Stat label="Format" value="Live Auction" />
+        <Stat label="Teams" value={String(teamCount)} />
+        <Stat label="Squad Size" value={String(squadSize)} />
+        <Stat label="Players" value={playerCount > 0 ? String(playerCount) : "—"} />
+        <Stat label="Budget" value={`₹${formatCompact(CPL_TEAM_BUDGET)}`} />
       </div>
     </section>
   );
