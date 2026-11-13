@@ -23,7 +23,10 @@ export function ManageBranding({ tournament }: { tournament: Tournament }) {
     setErr(null);
     setInfo(null);
     try {
-      await updateTournament({ managedByLogoUrl: next });
+      await updateTournament({
+        name: tournament.name,
+        managedByLogoUrl: next
+      });
       setInfo(next ? "Welcome logo saved." : "Welcome logo removed — default icon restored.");
     } catch (e) {
       setErr(formatFirebaseWriteError(e, "Could not save welcome logo"));

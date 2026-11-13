@@ -281,11 +281,27 @@ export async function updateTournament(patch: {
   managedByLogoUrl?: string | null;
 }) {
   const { db } = getFirebase();
+  const snap = await get(ref(db, "tournament"));
+  const existing = (snap.val() ?? {}) as Record<string, unknown>;
+
   const updates: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(patch)) {
     if (v !== undefined) updates[`tournament/${k}`] = v;
   }
-  if (Object.keys(updates).length) await update(ref(db), updates);
+
+  const nameInDb = safeTrim(existing.name);
+  const nameFromPatch = safeTrim(patch.name);
+  if (!nameInDb && !updates["tournament/name"] && Object.keys(updates).length > 0) {
+    updates["tournament/name"] = nameFromPatch || "CPL Kids Auction";
+  }
+
+  if (Object.keys(updates).length) {
+    try {
+      await update(ref(db), updates);
+    } catch (e) {
+      throw new Error(formatFirebaseWriteError(e, "Could not save tournament settings"));
+    }
+  }
 }
 
 /** Set every team's total budget to CPL_TEAM_BUDGET and clear reserve holdback. */

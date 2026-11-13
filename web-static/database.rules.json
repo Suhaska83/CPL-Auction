@@ -9,7 +9,10 @@
       }
     },
     "tournament": {
-      ".validate": "newData.val() == null || newData.hasChild('name')"
+      ".validate": "newData.val() == null || newData.hasChild('name') || (data.exists() && data.hasChild('name'))",
+      "managedByLogoUrl": {
+        ".validate": "newData.val() == null || newData.isString()"
+      }
     },
     "teams": {
       "$teamId": {
