@@ -51,7 +51,8 @@ export function ManageBranding({ tournament }: { tournament: Tournament }) {
         <p className="mb-4 text-sm text-white/60">
           This image appears on the <b>Welcome</b> and <b>Live Auction</b> pages under{" "}
           <b>Managed By</b>. Upload PNG/JPG/WebP or paste a public image URL. Recommended:
-          square or landscape, at least 512×512 px for the auction header.
+          square or landscape, at least 512×512 px for the auction header. Images are
+          stored in the database (no Firebase Storage).
         </p>
 
         <div className="mb-6 flex flex-col items-center gap-3 rounded-md border border-panel-border bg-navy-900/50 p-6">
